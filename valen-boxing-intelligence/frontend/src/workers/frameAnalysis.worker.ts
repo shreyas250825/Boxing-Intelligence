@@ -30,9 +30,21 @@ self.onmessage = (e: MessageEvent) => {
   }
 
   if (type === "REGISTER") {
-    const boxers = e.data.boxers as { id: string; bbox: NormBox; identifyTime: number }[]
+    const boxers = e.data.boxers as {
+      id: string
+      bbox?: NormBox
+      identifyTime?: number
+      checkpoints?: { slot: "early" | "middle" | "late"; t: number; bbox: NormBox; videoWidth: number; videoHeight: number }[]
+    }[]
     engine.disposeAll()
-    for (const b of boxers) engine.registerBoxer(b.id, b.bbox, b.identifyTime)
+    for (const b of boxers) {
+      const cps = b.checkpoints?.length
+        ? b.checkpoints
+        : b.bbox
+          ? [{ slot: "early" as const, t: b.identifyTime ?? 0, bbox: b.bbox, videoWidth: 0, videoHeight: 0 }]
+          : []
+      engine.registerBoxer(b.id, cps)
+    }
     self.postMessage({ type: "REGISTERED" })
     return
   }

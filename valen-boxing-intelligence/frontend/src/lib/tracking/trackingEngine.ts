@@ -1,12 +1,13 @@
 import { BoxerTracker } from "./boxerTracker"
 import { estimateCameraMotion, type CameraEstimate } from "./cameraMotion"
-import { iou } from "./geometry"
+import { boxCenter, iou } from "./geometry"
+import type { CheckpointSlot, IdentificationCheckpoint, TrackingCorrection } from "./checkpoints"
 import type { NormBox, Point, TrackUpdate } from "./types"
 
 export interface PendingBoxer {
   id: string
-  bbox: NormBox
-  identifyTime: number
+  checkpoints: IdentificationCheckpoint[]
+  applied: Set<number>
 }
 
 export interface EngineFrameResult {
@@ -15,6 +16,7 @@ export interface EngineFrameResult {
   height: number
   camera: CameraEstimate
   tracks: TrackUpdate[]
+  corrections: TrackingCorrection[]
 }
 
 export class TrackingEngine {
@@ -24,16 +26,17 @@ export class TrackingEngine {
   private bgPoints: Point[] = []
   private width = 0
   private height = 0
+  private lastCorrections: TrackingCorrection[] = []
 
-  registerBoxer(id: string, bbox: NormBox, identifyTime: number): void {
-    this.pending.set(id, { id, bbox, identifyTime })
+  registerBoxer(id: string, checkpoints: IdentificationCheckpoint[]): void {
+    const sorted = [...checkpoints].sort((a, b) => a.t - b.t)
+    this.pending.set(id, { id, checkpoints: sorted, applied: new Set() })
     this.trackers.get(id)?.dispose()
     this.trackers.delete(id)
   }
 
   initBoxer(id: string, gray: Float32Array, w: number, h: number, bbox: NormBox, timestamp: number): TrackUpdate {
     this.ensureFrame(gray, w, h)
-    this.pending.delete(id)
     let t = this.trackers.get(id)
     if (!t) {
       t = new BoxerTracker(id)
@@ -54,30 +57,46 @@ export class TrackingEngine {
 
   step(gray: Float32Array, w: number, h: number, timestamp: number, seekReset: boolean): EngineFrameResult {
     if (seekReset) this.markSeek()
+    this.lastCorrections = []
 
     const deferred: TrackUpdate[] = []
     for (const pending of [...this.pending.values()]) {
-      if (timestamp + 0.05 < pending.identifyTime) {
-        deferred.push({
-          id: pending.id,
-          timestamp,
-          bbox: null,
-          cx: 0,
-          cy: 0,
-          status: "PENDING",
-          confidence: 0,
-          validPoints: 0,
-          attemptedPoints: 0,
-          medianFbError: 0,
-          displacement: 0,
-          skipDisplacement: true,
-          inFrame: false,
-          cameraReliable: false,
-          pendingInit: true,
-        })
+      const due = pending.checkpoints.find((c, i) => !pending.applied.has(i) && timestamp + 0.08 >= c.t)
+      if (!due) {
+        if (!this.trackers.has(pending.id)) {
+          deferred.push(this.pendingUpdate(pending.id, timestamp))
+        }
         continue
       }
-      deferred.push(this.initBoxer(pending.id, gray, w, h, pending.bbox, timestamp))
+      const idx = pending.checkpoints.indexOf(due)
+      pending.applied.add(idx)
+      const existing = this.trackers.get(pending.id)
+      const predicted = existing?.bbox ?? null
+      const update = this.initBoxer(pending.id, gray, w, h, due.bbox, timestamp)
+      update.skipDisplacement = true
+      if (predicted && idx > 0) {
+        const p = boxCenter(predicted)
+        const c = boxCenter(due.bbox)
+        const drift = Math.hypot(p.cx - c.cx, p.cy - c.cy)
+        update.checkpointCorrection = {
+          slot: due.slot,
+          predictedCx: p.cx,
+          predictedCy: p.cy,
+          confirmedCx: c.cx,
+          confirmedCy: c.cy,
+          drift,
+        }
+        this.lastCorrections.push({
+          t: timestamp,
+          slot: due.slot as CheckpointSlot,
+          predictedCx: p.cx,
+          predictedCy: p.cy,
+          confirmedCx: c.cx,
+          confirmedCy: c.cy,
+          drift,
+        })
+      }
+      deferred.push(update)
     }
 
     let camera: CameraEstimate = { dx: 0, dy: 0, reliable: false, points: 0 }
@@ -119,7 +138,7 @@ export class TrackingEngine {
     this.prevGray = gray.slice()
     this.width = w
     this.height = h
-    return { timestamp, width: w, height: h, camera, tracks }
+    return { timestamp, width: w, height: h, camera, tracks, corrections: this.lastCorrections }
   }
 
   disposeBoxer(id: string): void {
@@ -134,6 +153,26 @@ export class TrackingEngine {
     this.pending.clear()
     this.prevGray = null
     this.bgPoints = []
+  }
+
+  private pendingUpdate(id: string, timestamp: number): TrackUpdate {
+    return {
+      id,
+      timestamp,
+      bbox: null,
+      cx: 0,
+      cy: 0,
+      status: "PENDING",
+      confidence: 0,
+      validPoints: 0,
+      attemptedPoints: 0,
+      medianFbError: 0,
+      displacement: 0,
+      skipDisplacement: true,
+      inFrame: false,
+      cameraReliable: false,
+      pendingInit: true,
+    }
   }
 
   private ensureFrame(gray: Float32Array, w: number, h: number) {

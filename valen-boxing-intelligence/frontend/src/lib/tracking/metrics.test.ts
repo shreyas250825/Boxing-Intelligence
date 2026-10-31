@@ -20,6 +20,11 @@ function track(label: "A" | "B", samples: TrackingSample[], identifyTime: number
     tracked: { x: 0.1, y: 0.2, w: 0.2, h: 0.4 }, status: "TRACKING", confidence: 0.8,
     validPoints: 16, samples, totalMovement: total, validSampleCount: samples.filter(x => x.status === "TRACKING").length,
     lossIntervals: [], lastKnown: null, lastKnownTime: null,
+    checkpoints: {
+      early: { slot: "early", t: identifyTime, bbox: { x: 0.1, y: 0.2, w: 0.2, h: 0.4 }, videoWidth: 640, videoHeight: 360 },
+      middle: null, late: null,
+    },
+    corrections: [],
   }
 }
 

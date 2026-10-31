@@ -52,6 +52,14 @@ export interface TrackUpdate {
   initReason?: string
   pendingInit?: boolean
   usedAffine?: boolean
+  checkpointCorrection?: {
+    slot: string
+    predictedCx: number
+    predictedCy: number
+    confirmedCx: number
+    confirmedCy: number
+    drift: number
+  }
 }
 
 export interface DisplayRect {
@@ -66,7 +74,7 @@ export interface DisplayRect {
 }
 
 export const MEASUREMENT_LABEL = "normalized_image_plane_movement"
-export const TRACKING_VERSION = "lk-pyramid-v2"
+export const TRACKING_VERSION = "lk-pyramid-v3"
 export const MIN_FEATURE_POINTS = 5
 export const STATIONARY_RATE_THRESHOLD = 0.015
 export const RATE_WINDOW_SECONDS = 1

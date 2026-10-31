@@ -71,7 +71,30 @@ export default function PerformanceReport(props: {
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 12 }}>{b.observation}</p>
+            <p style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 8 }}>{b.observation}</p>
+            <p style={{ fontSize: 12, color: "#93c5fd", marginBottom: 8 }}>{b.coverageNote} · {b.corrections} checkpoint corrections</p>
+            <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>
+              Checkpoints: {b.checkpoints.map(c => `${c.slot} ${c.t == null ? "skipped" : fmtHms(c.t)}`).join(" · ")}
+            </p>
+            <h3 style={h3}>Confirmed punches (coach tags only)</h3>
+            {b.punches.empty ? (
+              <p style={{ color: "#fbbf24", fontSize: 13 }}>No coach annotations recorded. Automatic punch detection is not used.</p>
+            ) : (
+              <p style={{ fontSize: 13 }}>
+                Total {b.punches.punches} · jab {b.punches.byType.jab || 0} · cross {b.punches.byType.cross || 0} · hooks {(b.punches.byType.lead_hook || 0) + (b.punches.byType.rear_hook || 0)} · uppercut {b.punches.byType.uppercut || 0}
+                · head/body {JSON.stringify(b.punches.byZone)} · outcomes {JSON.stringify(b.punches.byOutcome)} · L/R hand {b.punches.left}/{b.punches.right}
+              </p>
+            )}
+            {b.suggestions.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <h3 style={h3}>Evidence-based coaching observations</h3>
+                {b.suggestions.map(s => (
+                  <p key={s.evidence} style={{ fontSize: 13, marginBottom: 8 }}>
+                    {s.text} <span style={{ color: "#9ca3af" }}>({s.evidence})</span>
+                  </p>
+                ))}
+              </div>
+            )}
             {b.metrics.rateSeries.length > 1 && (
               <div style={{ height: 180, marginBottom: 8 }}>
                 <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 4 }}>Cumulative movement vs video time</p>

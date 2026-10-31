@@ -2,6 +2,7 @@ import type { TrackingPayload, BoxerTrackPayload } from "../../api/analysis"
 import { MEASUREMENT_LABEL, TRACKING_VERSION, type LossInterval, type NormBox, type TrackingSample, type TrackStatus } from "./types"
 import { chartSeries } from "./movement"
 import type { PerformanceReportData } from "./buildReport"
+import { emptyCheckpoints, firstCheckpoint, sortedCheckpoints, type IdentificationCheckpoint, type TrackingCorrection, type CheckpointSlot } from "./checkpoints"
 
 export interface PersistedBoxerTrack {
   boxerId: string
@@ -13,6 +14,8 @@ export interface PersistedBoxerTrack {
   identifyTime: number
   identifyVideoWidth: number
   identifyVideoHeight: number
+  checkpoints: Record<CheckpointSlot, IdentificationCheckpoint | null>
+  corrections: TrackingCorrection[]
   tracked: NormBox | null
   status: TrackStatus
   confidence: number
@@ -50,6 +53,8 @@ export function tracksToPayload(
       identify_time: t.identifyTime,
       identify_video_width: t.identifyVideoWidth,
       identify_video_height: t.identifyVideoHeight,
+      checkpoints: sortedCheckpoints(t.checkpoints),
+      corrections: t.corrections,
       total_movement: t.totalMovement,
       valid_sample_count: t.validSampleCount,
       samples: t.samples.map(s => ({ ...s, status: s.status })),
@@ -63,16 +68,40 @@ export function tracksFromPayload(payload: TrackingPayload): PersistedBoxerTrack
     const last = b.samples.length ? b.samples[b.samples.length - 1] : null
     const label = (b.label === "B" ? "B" : "A") as "A" | "B"
     const bbox = b.bbox ?? (last ? { x: last.x, y: last.y, w: last.w, h: last.h } : null)
+    const cps = emptyCheckpoints()
+    for (const c of b.checkpoints || []) {
+      const slot = (c.slot === "middle" || c.slot === "late" ? c.slot : "early") as CheckpointSlot
+      cps[slot] = {
+        slot,
+        t: c.t,
+        bbox: c.bbox,
+        videoWidth: c.videoWidth,
+        videoHeight: c.videoHeight,
+        thumbnail: c.thumbnail,
+      }
+    }
+    if (!b.checkpoints?.length && bbox) {
+      cps.early = {
+        slot: "early",
+        t: b.identify_time ?? 0,
+        bbox,
+        videoWidth: b.identify_video_width ?? payload.video_width,
+        videoHeight: b.identify_video_height ?? payload.video_height,
+      }
+    }
+    const first = firstCheckpoint(cps)
     return {
       boxerId: b.boxer_id,
       label,
       name: b.name,
       color: b.color || (i === 0 ? "#3b82f6" : "#f59e0b"),
-      bbox,
-      identified: !!bbox,
-      identifyTime: b.identify_time ?? b.samples[0]?.t ?? 0,
-      identifyVideoWidth: b.identify_video_width ?? payload.video_width,
-      identifyVideoHeight: b.identify_video_height ?? payload.video_height,
+      bbox: first?.bbox ?? bbox,
+      identified: !!first,
+      identifyTime: first?.t ?? b.identify_time ?? b.samples[0]?.t ?? 0,
+      identifyVideoWidth: first?.videoWidth ?? b.identify_video_width ?? payload.video_width,
+      identifyVideoHeight: first?.videoHeight ?? b.identify_video_height ?? payload.video_height,
+      checkpoints: cps,
+      corrections: (b.corrections || []).map(c => ({ ...c, slot: (c.slot === "middle" || c.slot === "late" ? c.slot : "early") as CheckpointSlot })),
       tracked: last ? { x: last.x, y: last.y, w: last.w, h: last.h } : bbox,
       status: "PENDING",
       confidence: last?.confidence ?? 0,

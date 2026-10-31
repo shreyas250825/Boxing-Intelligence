@@ -32,6 +32,9 @@ import { rgbaToGray } from "../../lib/tracking/image"
 import { buildPerformanceReport, type PerformanceReportData } from "../../lib/tracking/buildReport"
 import { fmtHms } from "../../lib/tracking/time"
 import PerformanceReport from "../../components/PerformanceReport"
+import IdentifyStage from "../../components/IdentifyStage"
+import { emptyCheckpoints, firstCheckpoint, sortedCheckpoints } from "../../lib/tracking/checkpoints"
+import type { TrackingCorrection } from "../../lib/tracking/checkpoints"
 
 
 const ACTION_TYPES = [
@@ -88,6 +91,8 @@ function emptyTrack(partial: Pick<BoxerTrack, "boxerId" | "label" | "name" | "co
     lossIntervals: [],
     lastKnown: null,
     lastKnownTime: null,
+    checkpoints: emptyCheckpoints(),
+    corrections: [],
   }
 }
 
@@ -175,6 +180,15 @@ export default function VideoAnalysisWorkspace() {
   const [identifyPlaying, setIdentifyPlaying] = useState(false)
   const [identifyDrawMode, setIdentifyDrawMode] = useState(false)
   const [report, setReport] = useState<PerformanceReportData | null>(null)
+  const [punchPlace, setPunchPlace] = useState(false)
+  const [punchMeta, setPunchMeta] = useState<{
+    target_area?: ActionEvent["target_area"]
+    target_side?: ActionEvent["target_side"]
+    outcome?: ActionEvent["outcome"]
+    hand?: ActionEvent["hand"]
+    nx?: number
+    ny?: number
+  }>({})
 
   useEffect(() => { tracksRef.current = tracks }, [tracks])
   useEffect(() => { activeRef.current = active }, [active])
@@ -296,6 +310,9 @@ export default function VideoAnalysisWorkspace() {
         lossIntervals: mv.openLoss ? [...mv.lossIntervals, mv.openLoss] : mv.lossIntervals,
         lastKnown: box ?? t.lastKnown,
         lastKnownTime: u.timestamp,
+        corrections: u.checkpointCorrection
+          ? [...t.corrections, { t: u.timestamp, ...u.checkpointCorrection, slot: (u.checkpointCorrection.slot === "middle" || u.checkpointCorrection.slot === "late" ? u.checkpointCorrection.slot : "early") }]
+          : t.corrections,
       }
     })
     tracksRef.current = next
@@ -403,8 +420,8 @@ export default function VideoAnalysisWorkspace() {
     worker.postMessage({
       type: "REGISTER",
       boxers: tracksRef.current
-        .filter((t): t is BoxerTrack & { bbox: NormBox } => !!t.bbox && t.identified)
-        .map(t => ({ id: t.label, bbox: t.bbox, identifyTime: t.identifyTime })),
+        .filter(t => t.identified && sortedCheckpoints(t.checkpoints).length > 0)
+        .map(t => ({ id: t.label, checkpoints: sortedCheckpoints(t.checkpoints) })),
     })
     initedRef.current = true
   }, [])
@@ -651,9 +668,17 @@ export default function VideoAnalysisWorkspace() {
       round_num: getRound(ts),
       boxer_label: activeTrack?.label,
       note: activeTrack ? `Boxer ${activeTrack.label}: ${activeTrack.name}` : undefined,
+      confirmed: true,
+      target_area: punchMeta.target_area,
+      target_side: punchMeta.target_side,
+      outcome: punchMeta.outcome,
+      hand: punchMeta.hand,
+      nx: punchMeta.nx,
+      ny: punchMeta.ny,
     }
     setEvents(prev => [...prev, evt].sort((a, b) => a.timestamp - b.timestamp))
-  }, [tracks, activeBoxerIdx, getRound])
+    setPunchPlace(false)
+  }, [tracks, activeBoxerIdx, getRound, punchMeta])
 
   useEffect(() => {
     if (stage !== "workspace") return
@@ -725,8 +750,8 @@ export default function VideoAnalysisWorkspace() {
   }, [videoId, videoMeta, report, events, coach, roundCfg, duration])
 
   const startAnalyse = () => {
-    if (!tracksRef.current.every(t => t.identified && t.bbox)) {
-      setTrackError("Identify every selected boxer before analysing.")
+    if (!tracksRef.current.every(t => firstCheckpoint(t.checkpoints))) {
+      setTrackError("Identify at least one checkpoint for every selected boxer before analysing.")
       return
     }
     const video = videoRef.current
@@ -739,7 +764,7 @@ export default function VideoAnalysisWorkspace() {
     finishingRef.current = false
     resetProcessBudget()
     lockProcessSize(video.videoWidth, video.videoHeight)
-    const earliest = Math.min(...tracksRef.current.map(t => t.identifyTime))
+    const earliest = Math.min(...tracksRef.current.map(t => firstCheckpoint(t.checkpoints)?.t ?? t.identifyTime))
     initedRef.current = false
     lastMediaTimeRef.current = -1
     seekResetRef.current = true
@@ -952,128 +977,20 @@ export default function VideoAnalysisWorkspace() {
   )
 
   if (stage === "identify") {
-    const currentTrack = tracks[currentIdentifyIdx]
-    const allIdentified = tracks.length > 0 && tracks.every(t => t.identified)
     return (
-      <div style={{ minHeight: "100vh", background: "#030712", color: "#f1f5f9", fontFamily: "Inter,system-ui,sans-serif", display: "flex", flexDirection: "column" }}>
-        <header style={{ background: "#111827", borderBottom: "1px solid #1f2937", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => setStage("setup")} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-            <ChevronLeft size={15} />Back
-          </button>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>
-            Identify boxers independently — any timestamp
-          </span>
-        </header>
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 24px 48px", width: "100%" }}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            {tracks.map((t, i) => (
-              <button key={t.label} onClick={() => { setCurrentIdentifyIdx(i); setDrawnBox(null); setIdentifyError(""); setIdentifyDrawMode(false) }}
-                style={{ flex: 1, padding: "10px 12px", borderRadius: 10, cursor: "pointer", textAlign: "left",
-                  background: currentIdentifyIdx === i ? t.color + "22" : "#111827",
-                  border: `2px solid ${currentIdentifyIdx === i ? t.color : "#1f2937"}` }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: t.color }}>Identify Boxer {t.label}</p>
-                <p style={{ fontSize: 11, color: "#9ca3af" }}>{t.name}</p>
-                <p style={{ fontSize: 11, color: t.identified ? "#22c55e" : "#6b7280" }}>
-                  {t.identified ? `Saved at ${fmtHms(t.identifyTime)}` : "Not selected yet"}
-                </p>
-              </button>
-            ))}
-          </div>
-          <div style={{ marginBottom: 12, padding: "10px 14px", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10 }}>
-            <p style={{ fontSize: 12, color: "#93c5fd", lineHeight: 1.6 }}>
-              Use Play, Pause, and the timeline below to move the video. When Boxer {currentTrack?.label} is clear, pause, then click Draw box. The overlay no longer blocks scrubbing until you start drawing.
-            </p>
-            <p style={{ fontSize: 13, color: "#e5e7eb", marginTop: 6, fontFamily: "monospace", fontWeight: 700 }}>Current timestamp {fmtHms(identifyTime)}</p>
-          </div>
-          <div style={{ position: "relative", borderRadius: "12px 12px 0 0", overflow: "hidden", border: `2px solid ${currentTrack?.color || "#3b82f6"}`, borderBottom: "none", background: "#000" }}>
-            <video ref={identifyVideoRef} crossOrigin={streamCors ? "anonymous" : undefined} src={streamUrl} playsInline
-              style={{ width: "100%", display: "block", maxHeight: "52vh", background: "#000" }}
-              onTimeUpdate={e => { setIdentifyTime((e.target as HTMLVideoElement).currentTime); paintIdentify() }}
-              onLoadedMetadata={e => {
-                const v = e.target as HTMLVideoElement
-                setIdentifyDuration(Number.isFinite(v.duration) ? v.duration : 0)
-                paintIdentify()
-              }}
-              onPlay={() => setIdentifyPlaying(true)}
-              onPause={() => setIdentifyPlaying(false)}
-            />
-            <canvas ref={identifyOverlayRef}
-              style={{
-                position: "absolute", inset: 0, width: "100%", height: "100%",
-                cursor: identifyDrawMode ? "crosshair" : "default",
-                pointerEvents: identifyDrawMode ? "auto" : "none",
-              }}
-              onMouseDown={e => { if (!identifyDrawMode) return; const p = getIdentifyNorm(e); drawStart.current = p; setIsDrawing(true); setDrawnBox(null) }}
-              onMouseMove={e => { if (!isDrawing || !identifyDrawMode) return; setDrawnBox(normBoxFromDrag(drawStart.current, getIdentifyNorm(e))) }}
-              onMouseUp={() => setIsDrawing(false)}
-              onMouseLeave={() => setIsDrawing(false)}
-            />
-          </div>
-          <div style={{ background: "#111827", border: `2px solid ${currentTrack?.color || "#3b82f6"}`, borderTop: "1px solid #1f2937", borderRadius: "0 0 12px 12px", padding: "10px 12px 12px" }}>
-            <div style={{ position: "relative", height: 10, background: "#374151", borderRadius: 5, marginBottom: 10, cursor: "pointer" }}
-              onClick={e => {
-                const r = e.currentTarget.getBoundingClientRect()
-                const dur = identifyDuration || identifyVideoRef.current?.duration || 0
-                if (dur > 0) seekIdentify(((e.clientX - r.left) / r.width) * dur)
-              }}>
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, background: currentTrack?.color || "#2563eb", borderRadius: 5, width: identifyDuration > 0 ? `${(identifyTime / identifyDuration) * 100}%` : "0%" }} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => seekIdentify(identifyTime - 5)} style={idCtrlBtn} title="Back 5 seconds">−5s</button>
-              <button onClick={() => seekIdentify(identifyTime - 1)} style={idCtrlBtn} title="Back 1 second">−1s</button>
-              <button onClick={toggleIdentifyPlay} style={{ width: 36, height: 36, background: "#2563eb", border: "none", borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {identifyPlaying ? <Pause size={14} fill="white" color="white" /> : <Play size={14} fill="white" color="white" />}
-              </button>
-              <button onClick={() => seekIdentify(identifyTime + 1)} style={idCtrlBtn} title="Forward 1 second">+1s</button>
-              <button onClick={() => seekIdentify(identifyTime + 5)} style={idCtrlBtn} title="Forward 5 seconds">+5s</button>
-              <span style={{ fontSize: 12, color: "#d1d5db", fontFamily: "monospace" }}>{fmtHms(identifyTime)} / {fmtHms(identifyDuration)}</span>
-              <button
-                onClick={() => {
-                  identifyVideoRef.current?.pause()
-                  setIdentifyPlaying(false)
-                  setIdentifyDrawMode(d => !d)
-                  setDrawnBox(null)
-                }}
-                style={{
-                  marginLeft: "auto",
-                  background: identifyDrawMode ? (currentTrack?.color || "#2563eb") : "#1f2937",
-                  border: "1px solid #374151",
-                  color: "white",
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}>
-                {identifyDrawMode ? `Drawing Boxer ${currentTrack?.label} — drag on video` : `Draw box for Boxer ${currentTrack?.label}`}
-              </button>
-            </div>
-          </div>
-          {identifyError && <p style={{ color: "#f87171", fontSize: 12, marginTop: 10 }}>{identifyError}</p>}
-          <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-            <button onClick={() => { setDrawnBox(null); setIdentifyDrawMode(false) }}
-              style={{ flex: 1, background: "#1f2937", border: "1px solid #374151", borderRadius: 8, padding: "10px", fontSize: 13, color: "#9ca3af", cursor: "pointer" }}>
-              Clear & move video
-            </button>
-            <button onClick={handleConfirmBoxer}
-              disabled={!drawnBox || drawnBox.w < 0.02 || drawnBox.h < 0.02}
-              style={{ flex: 2, background: drawnBox && drawnBox.w >= 0.02 ? (currentTrack?.color || "#2563eb") : "#374151", border: "none", borderRadius: 8, padding: "10px", fontSize: 14, fontWeight: 700, color: drawnBox && drawnBox.w >= 0.02 ? "white" : "#6b7280", cursor: drawnBox && drawnBox.w >= 0.02 ? "pointer" : "default" }}>
-              Confirm Boxer {currentTrack?.label} at {fmtHms(identifyTime)}
-            </button>
-          </div>
-          {allIdentified && (
-            <button onClick={() => setStage("review")}
-              style={{ width: "100%", marginTop: 12, background: "#16a34a", border: "none", borderRadius: 8, padding: "12px", fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer" }}>
-              Review selections
-            </button>
-          )}
-        </div>
-      </div>
+      <IdentifyStage
+        tracks={tracks}
+        streamUrl={streamUrl}
+        streamCors={streamCors}
+        onBack={() => setStage("setup")}
+        onTracks={next => { tracksRef.current = next; setTracks(next) }}
+        onReview={() => setStage("review")}
+      />
     )
   }
 
   if (stage === "review") {
-    const earliest = tracks.filter(t => t.identified).reduce((m, t) => Math.min(m, t.identifyTime), Infinity)
+    const earliest = tracks.filter(t => firstCheckpoint(t.checkpoints)).reduce((m, t) => Math.min(m, firstCheckpoint(t.checkpoints)!.t), Infinity)
     return (
       <div style={{ minHeight: "100vh", background: "#030712", color: "#f1f5f9", fontFamily: "Inter,system-ui,sans-serif" }}>
         <header style={{ background: "#111827", borderBottom: "1px solid #1f2937", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12 }}>
@@ -1082,15 +999,19 @@ export default function VideoAnalysisWorkspace() {
         </header>
         <div style={{ maxWidth: 720, margin: "0 auto", padding: 28 }}>
           <p style={{ color: "#9ca3af", fontSize: 13, marginBottom: 16 }}>
-            Analysis will start at the earliest identification ({Number.isFinite(earliest) ? fmtHms(earliest) : "—"}) and initialize each tracker only at its own timestamp.
+            Analysis starts at the earliest checkpoint ({Number.isFinite(earliest) ? fmtHms(earliest) : "—"}). Middle and late boxes correct the tracker at those timestamps. Skipped checkpoints lower identity-verification coverage.
           </p>
           {tracks.map((t, i) => (
             <div key={t.label} style={{ background: "#111827", border: `1px solid ${t.color}55`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
               <p style={{ fontWeight: 800, color: t.color }}>Boxer {t.label} — {t.name}</p>
-              <p style={{ fontSize: 13, color: "#d1d5db" }}>Identified at {fmtHms(t.identifyTime)} · frame {t.identifyVideoWidth}×{t.identifyVideoHeight}</p>
-              <p style={{ fontSize: 12, color: "#6b7280" }}>
-                Box {t.bbox ? `${t.bbox.x.toFixed(3)}, ${t.bbox.y.toFixed(3)}, ${t.bbox.w.toFixed(3)}×${t.bbox.h.toFixed(3)}` : "missing"}
-              </p>
+              {(["early", "middle", "late"] as const).map(slot => {
+                const c = t.checkpoints[slot]
+                return (
+                  <p key={slot} style={{ fontSize: 13, color: c ? "#d1d5db" : "#fbbf24" }}>
+                    {slot}: {c ? fmtHms(c.t) : "skipped"}
+                  </p>
+                )
+              })}
               <button onClick={() => { setCurrentIdentifyIdx(i); setDrawnBox(null); setStage("identify") }}
                 style={{ marginTop: 8, background: "none", border: "1px solid #374151", color: "#9ca3af", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}>
                 Change Boxer {t.label}
@@ -1134,7 +1055,7 @@ export default function VideoAnalysisWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#030712", fontFamily: "Inter,system-ui,sans-serif", color: "#f1f5f9" }}>
+    <div className="analysis-workspace h-screen flex flex-col overflow-hidden" style={{ background: "#030712", fontFamily: "Inter,system-ui,sans-serif", color: "#f1f5f9" }}>
       <canvas ref={canvasRef} style={{ display: "none" }} />
       <header style={{ background: "#111827", borderBottom: "1px solid #1f2937", height: 48 }} className="flex items-center px-4 gap-3 shrink-0">
         <button onClick={() => nav(-1)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
@@ -1168,6 +1089,10 @@ export default function VideoAnalysisWorkspace() {
               Report
             </button>
           )}
+          <button onClick={() => setPunchPlace(p => !p)}
+            style={{ background: punchPlace ? "#7c2d12" : "transparent", border: "1px solid #374151", borderRadius: 8, padding: "4px 8px", fontSize: 10, color: "#fbbf24", cursor: "pointer" }}>
+            {punchPlace ? "Tap video for punch point" : "Mark punch point"}
+          </button>
           {active ? (
             <button onClick={() => setActive(false)} style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: "4px 10px", fontSize: 11, color: "#f87171", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
               <Square size={9} />Stop
@@ -1219,7 +1144,14 @@ export default function VideoAnalysisWorkspace() {
               onEnded={handleEnded}
               onError={() => setVError("Video could not be loaded.")}
             />
-            <canvas ref={overlayRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+            <canvas ref={overlayRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: punchPlace ? "auto" : "none", cursor: punchPlace ? "crosshair" : "default" }}
+              onClick={e => {
+                if (!punchPlace || !videoRef.current) return
+                const p = clientToNorm(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect(), displayedVideoRect(videoRef.current))
+                setPunchMeta(m => ({ ...m, nx: p.x, ny: p.y }))
+                setPunchPlace(false)
+              }}
+            />
             {active && (
               <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.8)", borderRadius: 8, padding: "4px 8px", display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 7, height: 7, background: "#ef4444", borderRadius: "50%" }} />
@@ -1342,6 +1274,7 @@ export default function VideoAnalysisWorkspace() {
                       { label: "Feature points", value: String(t.validPoints) },
                       { label: "Valid samples", value: String(t.validSampleCount) },
                       { label: "Cumulative movement", value: t.totalMovement.toFixed(4) },
+                      { label: "Corrections", value: String(t.corrections.length) },
                       { label: "Timestamp", value: fmtTime(curTime) },
                     ].map(row => (
                       <div key={row.label} style={{ background: "rgba(31,41,55,0.5)", borderRadius: 6, padding: "5px 8px", marginBottom: 4, display: "flex", justifyContent: "space-between", gap: 8 }}>
@@ -1371,6 +1304,17 @@ export default function VideoAnalysisWorkspace() {
             )}
             {rightTab === "events" && (
               <div style={{ padding: 8 }}>
+                <p style={{ fontSize: 9, color: "#6b7280", marginBottom: 6 }}>Confirmed coach tags only. Automatic punch detection is not enabled.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginBottom: 8 }}>
+                  {([["target_area", ["head", "body", "unclear"]], ["target_side", ["left", "right", "center", "unclear"]], ["outcome", ["landed", "blocked", "missed", "unclear"]], ["hand", ["left", "right", "unclear"]]] as const).map(([key, opts]) => (
+                    <select key={key} value={(punchMeta[key] as string) || ""} onChange={e => setPunchMeta(m => ({ ...m, [key]: e.target.value || undefined }))}
+                      style={{ background: "#0f172a", color: "#e5e7eb", border: "1px solid #374151", borderRadius: 4, fontSize: 10, padding: 4 }}>
+                      <option value="">{key}</option>
+                      {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ))}
+                </div>
+                {punchMeta.nx != null && <p style={{ fontSize: 9, color: "#93c5fd", marginBottom: 6 }}>Point {punchMeta.nx.toFixed(2)}, {punchMeta.ny?.toFixed(2)}</p>}
                 {events.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "24px 8px" }}>
                     <Tag size={18} color="#374151" style={{ margin: "0 auto 8px" }} />

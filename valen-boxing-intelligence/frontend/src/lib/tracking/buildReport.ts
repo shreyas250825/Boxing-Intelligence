@@ -11,6 +11,8 @@ import {
 } from "./metrics"
 import type { PersistedBoxerTrack } from "./persist"
 import { MEASUREMENT_LABEL, TRACKING_VERSION } from "./types"
+import { CHECKPOINT_SLOTS, coverageLabel, firstCheckpoint } from "./checkpoints"
+import { coachingSuggestions, punchBreakdown } from "./punches"
 
 export type ReportStatus = "draft" | "complete"
 
@@ -19,6 +21,11 @@ export interface BoxerReportBlock {
   identifyTime: number
   actions: ReturnType<typeof actionStats>
   observation: string
+  checkpoints: { slot: string; t: number | null }[]
+  coverageNote: string
+  corrections: number
+  punches: ReturnType<typeof punchBreakdown>
+  suggestions: { text: string; evidence: string }[]
   rounds: {
     round: number
     kind: "round" | "segment"
@@ -62,6 +69,7 @@ export interface PerformanceReportData {
   coach: CoachSummary
   events: ActionEvent[]
   roundConfig: RoundConfig
+  punchDetection: "coach-confirmed-only"
 }
 
 export function buildPerformanceReport(args: {
@@ -109,11 +117,25 @@ export function buildPerformanceReport(args: {
         defensive: ev.filter(e => ["block", "slip", "duck", "defensive", "head_move", "guard"].includes(e.action_type)).length,
       }
     })
+    const punches = punchBreakdown(args.events, t.label)
+    const suggestions = coachingSuggestions({
+      punches: punches.punches,
+      jabs: punches.byType.jab || 0,
+      missed: punches.byOutcome.missed || 0,
+      defense: punches.defense,
+      coveragePercent: metrics.coveragePercent,
+      roundMovements: rounds.map(r => r.movement),
+    })
     return {
       metrics,
-      identifyTime: t.identifyTime,
+      identifyTime: firstCheckpoint(t.checkpoints)?.t ?? t.identifyTime,
       actions,
       observation: describeMovement(metrics, rounds),
+      checkpoints: CHECKPOINT_SLOTS.map(s => ({ slot: s, t: t.checkpoints[s]?.t ?? null })),
+      coverageNote: coverageLabel(CHECKPOINT_SLOTS.filter(s => t.checkpoints[s]).length),
+      corrections: t.corrections.length,
+      punches,
+      suggestions,
       rounds,
     }
   })
@@ -171,6 +193,7 @@ export function buildPerformanceReport(args: {
     coach: args.coach,
     events: args.events,
     roundConfig: args.roundCfg,
+    punchDetection: "coach-confirmed-only",
   }
 }
 

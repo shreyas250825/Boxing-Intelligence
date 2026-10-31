@@ -236,8 +236,8 @@ describe("pyramidal LK tracker on synthetic frames", () => {
   it("does not initialize Boxer B before its identification timestamp", () => {
     const engine = new TrackingEngine()
     const a0 = frameWithSubject(W, H, { x: 12, y: 16, w: 24, h: 32, seed: 1 })
-    engine.registerBoxer("A", { x: 12 / W, y: 16 / H, w: 24 / W, h: 32 / H }, 3)
-    engine.registerBoxer("B", { x: 100 / W, y: 40 / H, w: 24 / W, h: 32 / H }, 12)
+    engine.registerBoxer("A", [{ slot: "early", t: 3, bbox: { x: 12 / W, y: 16 / H, w: 24 / W, h: 32 / H }, videoWidth: W, videoHeight: H }])
+    engine.registerBoxer("B", [{ slot: "early", t: 12, bbox: { x: 100 / W, y: 40 / H, w: 24 / W, h: 32 / H }, videoWidth: W, videoHeight: H }])
     const at3 = engine.step(a0, W, H, 3, false)
     const a = at3.tracks.find(t => t.id === "A")!
     const b = at3.tracks.find(t => t.id === "B")!
@@ -252,6 +252,27 @@ describe("pyramidal LK tracker on synthetic frames", () => {
     const b12 = at12.tracks.find(t => t.id === "B")!
     expect(b12.status === "TRACKING" || b12.status === "LOST").toBe(true)
     expect(b12.skipDisplacement).toBe(true)
+  })
+
+  it("reinitializes from a later coach checkpoint and skips that interval's displacement", () => {
+    const engine = new TrackingEngine()
+    const earlyBox = { x: 12 / W, y: 16 / H, w: 24 / W, h: 32 / H }
+    const midBox = { x: 70 / W, y: 20 / H, w: 24 / W, h: 32 / H }
+    engine.registerBoxer("A", [
+      { slot: "early", t: 0, bbox: earlyBox, videoWidth: W, videoHeight: H },
+      { slot: "middle", t: 0.2, bbox: midBox, videoWidth: W, videoHeight: H },
+    ])
+    const f0 = frameWithSubject(W, H, { x: 12, y: 16, w: 24, h: 32, seed: 1 })
+    const first = engine.step(f0, W, H, 0, false)
+    expect(first.tracks[0].skipDisplacement).toBe(true)
+    const f1 = frameWithSubject(W, H, { x: 20, y: 16, w: 24, h: 32, seed: 1 })
+    engine.step(f1, W, H, 0.1, false)
+    const f2 = frameWithSubject(W, H, { x: 70, y: 20, w: 24, h: 32, seed: 1 })
+    const mid = engine.step(f2, W, H, 0.2, false)
+    const a = mid.tracks.find(t => t.id === "A")!
+    expect(a.skipDisplacement).toBe(true)
+    expect(a.checkpointCorrection?.slot).toBe("middle")
+    expect(mid.corrections.length).toBe(1)
   })
 
   it("updates box scale when the subject grows", () => {

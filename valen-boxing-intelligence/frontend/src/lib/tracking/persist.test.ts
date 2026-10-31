@@ -23,6 +23,8 @@ function track(label: "A" | "B", samples: TrackingSample[], total: number): Pers
     validSampleCount: samples.length,
     lossIntervals: [],
     lastKnown: { x: 0.1, y: 0.2, w: 0.2, h: 0.4 },
+    checkpoints: { early: { slot: "early", t: 0, bbox: { x: 0.1, y: 0.2, w: 0.2, h: 0.4 }, videoWidth: 640, videoHeight: 360 }, middle: null, late: null },
+    corrections: [],
     lastKnownTime: samples.length ? samples[samples.length - 1].t : null,
   }
 }

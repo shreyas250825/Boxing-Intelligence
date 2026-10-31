@@ -26,3 +26,22 @@
     @apply text-xs font-medium text-gray-600 mb-1.5 block;
   }
 }
+
+@media (max-width: 900px) {
+  .analysis-workspace {
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: auto !important;
+  }
+  .analysis-workspace .flex-1 {
+    min-width: 0;
+  }
+  .identify-controls button {
+    min-height: 44px;
+  }
+}
+
+html, body, #root {
+  max-width: 100%;
+  overflow-x: hidden;
+}

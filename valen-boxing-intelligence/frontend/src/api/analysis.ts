@@ -20,6 +20,13 @@ export interface ActivityBurst { start: number; end: number; peak: number; durat
 export interface ActionEvent {
   id: string; timestamp: number; action_type: string; label: string
   note?: string; round_num?: number; boxer_label?: string
+  target_area?: "head" | "body" | "unclear"
+  target_side?: "left" | "right" | "center" | "unclear"
+  outcome?: "landed" | "blocked" | "missed" | "unclear"
+  hand?: "left" | "right" | "unclear"
+  nx?: number
+  ny?: number
+  confirmed?: boolean
 }
 export interface ROIConfig { x: number; y: number; width: number; height: number; enabled: boolean }
 export interface RoundConfig { num_rounds: number; round_duration: number; rest_duration: number; start_offset: number }
@@ -40,6 +47,8 @@ export interface BoxerTrackPayload {
   identify_time?: number
   identify_video_width?: number
   identify_video_height?: number
+  checkpoints?: { slot: string; t: number; bbox: { x: number; y: number; w: number; h: number }; videoWidth: number; videoHeight: number; thumbnail?: string }[]
+  corrections?: { t: number; slot: string; predictedCx: number; predictedCy: number; confirmedCx: number; confirmedCy: number; drift: number }[]
   total_movement: number; valid_sample_count: number
   samples: TrackingSamplePayload[] // timestamped LK samples; displacement is image-plane normalized
   loss_intervals: { start: number; end: number | null; reason: string }[]

@@ -27,6 +27,13 @@ class ActionEvent(BaseModel):
     note: Optional[str] = None
     round_num: Optional[int] = None
     boxer_label: Optional[str] = None
+    target_area: Optional[str] = None
+    target_side: Optional[str] = None
+    outcome: Optional[str] = None
+    hand: Optional[str] = None
+    nx: Optional[float] = None
+    ny: Optional[float] = None
+    confirmed: Optional[bool] = True
 
 
 class RoundConfig(BaseModel):
@@ -91,6 +98,8 @@ class BoxerTrackRecord(BaseModel):
     identify_time: Optional[float] = Field(None, ge=0)
     identify_video_width: Optional[int] = Field(None, ge=0)
     identify_video_height: Optional[int] = Field(None, ge=0)
+    checkpoints: Optional[list] = None
+    corrections: Optional[list] = None
     total_movement: float = Field(..., ge=0)
     valid_sample_count: int = Field(0, ge=0)
     samples: List[TrackingSample] = Field(default_factory=list)
