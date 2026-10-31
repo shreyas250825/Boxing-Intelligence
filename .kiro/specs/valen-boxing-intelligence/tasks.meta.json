@@ -1,0 +1,899 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Monorepo scaffold and project configuration": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355317803
+      },
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355331147
+      },
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355463510
+      }
+    ],
+    "2.1 Set up `backend/app/core/config.py` using `pydantic-settings`; load all `.env` keys with sensible defaults; expose a `get_settings()` dependency": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355318294
+      },
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355467386
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793356825798
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357371423
+      }
+    ],
+    "2.2 Set up `backend/app/core/database.py` with SQLAlchemy `create_engine` (SQLite WAL mode for `sqlite:///` URLs, PostgreSQL for `postgresql://`), `SessionLocal`, and `get_db` dependency": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355318412
+      },
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355471241
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357375365
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357379503
+      }
+    ],
+    "2.3 Create `backend/app/main.py`: instantiate the FastAPI app, register CORS middleware using `CORS_ORIGINS`, mount the `/api/v1` router, add `GET /health` endpoint returning `{ ffmpeg_available: bool }`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355318584
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357385460
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357516033
+      }
+    ],
+    "3.1 Create all eight SQLAlchemy ORM models in `backend/app/models/`: `Boxer`, `FightCamp`, `TrainingSession`, `Video`, `AnalysisJob`, `AnalysisResult`, `Metric`, `Observation`, `Report` — matching the ER diagram in design.md exactly, including FK relationships and RESTRICT delete rules": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355318857
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357386148
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357517028
+      }
+    ],
+    "3.2 Configure Alembic in `backend/`; generate the initial migration from the ORM models; add `init_db()` helper that runs migrations idempotently; confirm running it twice raises no errors": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355318970
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357522794
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367483363
+      }
+    ],
+    "4.1 Create all Pydantic v2 request/response schemas in `backend/app/schemas/` for boxers, fight camps, training sessions, videos, analysis jobs, analysis results, metrics, observations, and reports — matching the schemas in design.md; add `model_config = ConfigDict(from_attributes=True)` to all response schemas": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319054
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357523477
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367482811
+      }
+    ],
+    "5.1 Create `backend/app/core/responses.py` with helpers `success_response(data, meta=None)` and `error_response(code, message, details=None)`; create a global exception handler that catches unhandled exceptions and returns `500` with `code: INTERNAL_ERROR` and no stack trace": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319135
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367496660
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367515842
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367519894
+      }
+    ],
+    "6.1 Implement `backend/app/services/boxer_service.py` — `generate_permanent_id`, `check_duplicate` (case-insensitive, archived exempt), `create_boxer`, `get_boxer`, `list_boxers` (paginated + search), `update_boxer`, `archive_boxer` — matching the `BoxerService` interface in design.md": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319230
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367496755
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367525325
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367999915
+      }
+    ],
+    "6.6 Implement `backend/app/api/v1/boxers.py` router — all five boxer routes (`GET /boxers`, `POST /boxers`, `GET /boxers/{id}`, `PUT /boxers/{id}`, `POST /boxers/{id}/archive`) using the response envelopes and error codes from design.md; register the router in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319288
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367496828
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368004515
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368009315
+      }
+    ],
+    "7.1 Implement `backend/app/services/fight_camp_service.py` — `create_fight_camp` (date validation), `get_fight_camp`, `update_fight_camp`, `list_fight_camps` (descending `start_date`); enforce that linked sessions belong to the same boxer": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319356
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367496898
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368010196
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368014761
+      }
+    ],
+    "7.4 Implement `backend/app/api/v1/fight_camps.py` router — all four fight camp routes; register the router in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319425
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497034
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368018647
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368023025
+      }
+    ],
+    "8.1 Implement `backend/app/services/video_service.py` — `validate_file` (extension + MIME allowlist), `build_safe_path` (UUID + whitelisted extension, verify parent == `Storage_Dir`), `save_upload`, `get_video`, `delete_video` (remove DB record + file)": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319522
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497130
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368027841
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368335239
+      }
+    ],
+    "8.6 Implement `backend/app/api/v1/videos.py` router — `POST /videos/upload`, `GET /videos/{id}`, `DELETE /videos/{id}`; enforce file-size limit before writing; register router in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319613
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497200
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368028754
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368335652
+      }
+    ],
+    "9.1 Implement `backend/app/analysis/metadata.py` — `extract_video_metadata` using FFmpeg subprocess when available, fallback to OpenCV; raise `MetadataExtractionError` if both fail; postconditions: all fields `> 0`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319701
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497288
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368347507
+      }
+    ],
+    "9.2 Implement `backend/app/analysis/sampler.py` — `sample_frames` with configurable `interval_seconds` and `max_frames`; loop invariant: all collected frames are valid decoded numpy arrays; respect `max_frames` cap": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319789
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497354
+      }
+    ],
+    "9.5 Implement `backend/app/analysis/pose.py` — `is_mediapipe_available`, `run_pose_landmarker`; graceful fallback returning empty list when MediaPipe is not installed or model file missing; confidence threshold ≥ 0.5": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355319882
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497417
+      }
+    ],
+    "9.6 Implement `backend/app/analysis/metrics.py` — `compute_metrics` following the honesty rule: only insert metrics computable from real data; include `source` and non-empty `calculation_method` on every metric; pose-dependent metrics gated behind `len(pose_results) > 0`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320015
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497522
+      }
+    ],
+    "9.8 Implement `backend/app/analysis/pipeline.py` — `run_analysis_pipeline` orchestrating all stages (validate → metadata → sample → pose → metrics → persist); update job status (`queued → processing → completed | failed`) with `started_at` / `completed_at`; roll back on unhandled exception": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320141
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497592
+      }
+    ],
+    "9.9 Implement `backend/app/analysis/runner.py` — `start_analysis_job` spawning a daemon thread that creates its own DB session and calls `run_analysis_pipeline`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320209
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497654
+      }
+    ],
+    "10.1 Implement `backend/app/services/analysis_service.py` — `enqueue_job` (check for existing queued/processing job), `get_job`, `cancel_job`, `get_result` — matching the `AnalysisService` interface in design.md": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320273
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497725
+      }
+    ],
+    "10.4 Implement `backend/app/api/v1/analysis.py` router — `POST /videos/{id}/analyse`, `GET /analysis-jobs/{id}`, `GET /analysis-results/{id}`, `DELETE /analysis-jobs/{id}` (cancel); register in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320343
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497801
+      }
+    ],
+    "11.1 Implement `backend/app/services/observation_service.py` — `create_observation`, `update_observation`, `delete_observation`, `list_observations` (sorted by `timestamp_seconds` ascending)": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320419
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497880
+      }
+    ],
+    "11.3 Implement `backend/app/api/v1/observations.py` router — `GET /videos/{id}/observations`, `POST /observations`, `PUT /observations/{id}`, `DELETE /observations/{id}`; register in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320512
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367497946
+      }
+    ],
+    "12.1 Implement `backend/app/api/v1/progress.py` router — `GET /boxers/{id}/progress` (time-series metrics grouped by `metric_key`, with `start_date`/`end_date` filter) and `GET /boxers/{id}/sessions` (paginated, descending `session_date`); register in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320591
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498064
+      }
+    ],
+    "13.1 Implement `backend/app/services/report_service.py` — `generate_report` (verify boxer + session ownership, check at least one data source, build PDF via ReportLab, persist file and DB record, roll back on failure), `get_report_path`, `list_reports` — following the honesty-only policy": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320669
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498175
+      }
+    ],
+    "13.4 Implement `backend/app/api/v1/reports.py` router — `POST /reports`, `GET /reports/{id}`, `GET /reports/{id}/download` (stream with `Content-Disposition: attachment`), `GET /boxers/{id}/reports`; register in `main.py`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320745
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498256
+      }
+    ],
+    "14.1 Create `backend/tests/fixtures/generate_test_video.py` — script that uses OpenCV to produce a minimal valid MP4 (10 frames, 320×240, 30 fps) in a temp directory; expose a `pytest` fixture `test_video_path`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320821
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498330
+      }
+    ],
+    "15. Backend checkpoint — all tests pass": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355320898
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498396
+      }
+    ],
+    "16.1 Bootstrap the Vite + React + TypeScript project in `frontend/`; install and configure Tailwind CSS with a dark theme (primary backgrounds HSL L ≤ 20%, electric-blue accents); configure `vite.config.ts` with proxy to `http://localhost:8000`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321077
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498469
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368348966
+      }
+    ],
+    "16.2 Create `frontend/src/api/client.ts` — Axios instance that reads `VITE_API_BASE_URL` from env, sets `Content-Type: application/json`, and attaches a response interceptor that unwraps `data` from the success envelope and throws a typed `ApiError` for error envelopes": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321216
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498537
+      }
+    ],
+    "16.3 Create all TypeScript interfaces in `frontend/src/types/index.ts` — `Boxer`, `FightCamp`, `TrainingSession`, `Video`, `AnalysisJob`, `AnalysisResult`, `Metric`, `Observation`, `Report`, `PaginatedResponse<T>`, `ApiError` — matching the backend Pydantic schemas exactly": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321286
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498606
+      }
+    ],
+    "16.4 Set up React Router in `frontend/src/main.tsx` with routes for all 11 pages: `/` (Dashboard), `/boxers` (Boxer Directory), `/boxers/new` (Register Boxer), `/boxers/:id` (Athlete Profile), `/boxers/:id/fight-camps` (Fight Camp Management), `/boxers/:id/upload` (Video Upload), `/analysis/:jobId` (Video Analysis), `/videos/:id/annotations` (Session Annotations), `/boxers/:id/progress` (Progress Tracking), `/boxers/:id/reports` (Reports), `/settings` (Settings)": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321357
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498683
+      }
+    ],
+    "17.1 Create `frontend/src/api/boxers.ts` — typed helpers `registerBoxer`, `getBoxer`, `listBoxers`, `updateBoxer`, `archiveBoxer`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321445
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498792
+      }
+    ],
+    "17.2 Create `frontend/src/api/fightCamps.ts` — typed helpers `createFightCamp`, `getFightCamp`, `updateFightCamp`, `listFightCamps`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321531
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498860
+      }
+    ],
+    "17.3 Create `frontend/src/api/videos.ts` — typed helpers `uploadVideo` (XHR with `onProgress` callback), `getVideo`, `deleteVideo`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321618
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367498944
+      }
+    ],
+    "17.4 Create `frontend/src/api/analysis.ts` — typed helpers `enqueueAnalysis`, `getAnalysisJob`, `getAnalysisResult`, `cancelAnalysisJob`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321708
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499032
+      }
+    ],
+    "17.5 Create `frontend/src/api/observations.ts` — typed helpers `listObservations`, `createObservation`, `updateObservation`, `deleteObservation`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321801
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499156
+      }
+    ],
+    "17.6 Create `frontend/src/api/progress.ts` and `frontend/src/api/reports.ts` — typed helpers `getProgress`, `getSessions`, `generateReport`, `downloadReport`, `listReports`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321891
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499271
+      }
+    ],
+    "18.1 Implement `frontend/src/components/BoxerCard.tsx` — displays `BoxerSummary` (permanent ID, name, weight class, stance, session count); `onClick` navigates to athlete profile; dark card with electric-blue hover border": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355321974
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499342
+      }
+    ],
+    "18.2 Implement `frontend/src/components/SkeletonLoader.tsx` — reusable skeleton block and skeleton card variants used during all data-fetching states; used by all pages": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322052
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499405
+      }
+    ],
+    "18.3 Implement `frontend/src/components/VideoUploadForm.tsx` — file picker with client-side extension validation, XHR upload with progress bar (using `onProgress`), disabled submit during upload, inline error display for backend validation errors": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322169
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499475
+      }
+    ],
+    "18.4 Implement `frontend/src/hooks/useAnalysisJob.ts` — polls `getAnalysisJob` at configurable interval; stops on terminal status; cleans up on unmount; retries on network error up to 3 times; stops after 60 attempts with timeout message": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322234
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499540
+      }
+    ],
+    "18.6 Implement `frontend/src/components/AnalysisResultPanel.tsx` — uses `useAnalysisJob`; shows skeleton during polling; on completion fetches result and renders metrics labelled with `source`; shows `pose_available: false` banner; shows error card on failure": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322293
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499607
+      }
+    ],
+    "18.7 Implement `frontend/src/components/ProgressChart.tsx` — Recharts `LineChart` with one series per `metric_key`; renders `comparabilityWarnings` beneath the chart when mixed session types or metric sources are present": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322364
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499677
+      }
+    ],
+    "18.8 Implement `frontend/src/components/ObservationTimeline.tsx` — lists observations sorted by `timestamp_seconds` ascending; clicking an observation fires `onSeek`; clamped seek to video end when `timestamp_seconds` exceeds duration; empty state message when no observations; add/edit controls": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322457
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499749
+      }
+    ],
+    "19.1 Implement `frontend/src/pages/BoxerDirectory.tsx` — paginated, searchable list of `BoxerCard` components; skeleton loaders; empty state; search input debounced": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322544
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499823
+      }
+    ],
+    "19.2 Implement `frontend/src/pages/RegisterBoxer.tsx` — form with all required boxer fields; client-side validation; on 409 shows warning with link to existing profile; on success redirects to athlete profile": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322628
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499894
+      }
+    ],
+    "19.3 Implement `frontend/src/pages/AthleteProfile.tsx` — displays full boxer record including permanent ID; edit mode for mutable fields; archive button; lists associated sessions and fight camps; 404 handling": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322709
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367499988
+      }
+    ],
+    "19.4 Implement `frontend/src/pages/FightCampManagement.tsx` — lists fight camps for a boxer in descending start-date order; form to create/edit a camp with date validation; 404 handling for boxer": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322795
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500070
+      }
+    ],
+    "19.5 Implement `frontend/src/pages/VideoUpload.tsx` — wraps `VideoUploadForm`; links upload to a boxer and optionally a fight camp; on success shows \"Analyse\" button that calls `enqueueAnalysis` and navigates to `/analysis/:jobId`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355322879
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500140
+      }
+    ],
+    "19.6 Implement `frontend/src/pages/VideoAnalysis.tsx` — renders `AnalysisResultPanel` for the given `jobId`; shows job metadata while polling; displays full metrics dashboard on completion": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323013
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500263
+      }
+    ],
+    "19.7 Implement `frontend/src/pages/SessionAnnotations.tsx` — video player (HTML5 `<video>`) synced with `ObservationTimeline`; add/edit/delete observation forms; real-time seek integration": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323076
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500354
+      }
+    ],
+    "19.8 Implement `frontend/src/pages/ProgressTracking.tsx` — date range filter controls; renders `ProgressChart` for each metric key returned from `/progress`; comparability warnings; empty state": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323147
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500429
+      }
+    ],
+    "19.9 Implement `frontend/src/pages/Reports.tsx` — session selector (only sessions with at least one observation or completed analysis result are selectable; \"Generate Report\" disabled otherwise with tooltip); lists previously generated reports with download links": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323226
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500499
+      }
+    ],
+    "19.10 Implement `frontend/src/pages/Dashboard.tsx` — summary cards (total boxers, recent sessions, pending observations); quick-action buttons; responsive grid layout": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323308
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500584
+      }
+    ],
+    "19.11 Implement `frontend/src/pages/Settings.tsx` — displays `/health` data (FFmpeg availability); storage usage from `GET /api/v1/settings/storage`; GDPR full-deletion button (`DELETE /api/v1/boxers/{id}/data`) with confirmation dialog": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323390
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500710
+      }
+    ],
+    "20.1 Create `backend/Dockerfile` — Python 3.11 slim base image, copy requirements, install dependencies, expose port 8000, run `uvicorn app.main:app`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323471
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500781
+      }
+    ],
+    "20.2 Create `backend/render.yaml` — web service definition pointing to the Dockerfile, with environment variable references for `DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323545
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500845
+      }
+    ],
+    "21. Final checkpoint — full integration verified": [
+      {
+        "executionId": "4e203054-9144-4095-9aaa-8ce43a5ebb5b",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793355323629
+      },
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367500912
+      }
+    ],
+    "2. Backend foundation — FastAPI app, config, and database layer": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793357516178
+      }
+    ],
+    "4. Pydantic schemas": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367482955
+      }
+    ],
+    "3. Database models and Alembic migrations": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367483460
+      }
+    ],
+    "5. Standard API response envelopes and error handling": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793367519989
+      }
+    ],
+    "6. Boxer service and router": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368009404
+      }
+    ],
+    "7. Fight camp service and router": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368023132
+      }
+    ],
+    "8. Video service and upload router": [
+      {
+        "executionId": "ce58c8d4-b3ea-49a9-b5e4-9df72c579364",
+        "chatSessionId": "sess_4e986cab-a6cc-41e5-bec6-b6b496b4cd4d",
+        "timestamp": 1793368335731
+      }
+    ]
+  }
+}

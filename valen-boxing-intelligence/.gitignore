@@ -1,0 +1,43 @@
+﻿# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+
+# Storage directories
+data/
+reports/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.hypothesis/
+htmlcov/
+.coverage
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+
+# MediaPipe models
+mediapipe_models/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
