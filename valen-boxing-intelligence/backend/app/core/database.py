@@ -1,3 +1,6 @@
+from pathlib import Path
+from urllib.parse import urlparse
+
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 from typing import Generator
@@ -85,5 +88,12 @@ def _ensure_analysis_columns() -> None:
 
 def init_db() -> None:
     """Create all tables idempotently. Safe to call multiple times on Render startup."""
+    parsed = urlparse(settings.DATABASE_URL)
+    if parsed.scheme == "sqlite" and parsed.path not in ("", ":memory:"):
+        db_path = Path(parsed.path)
+        if not db_path.is_absolute():
+            db_path = Path.cwd() / db_path
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
     Base.metadata.create_all(bind=engine)
     _ensure_analysis_columns()

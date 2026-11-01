@@ -32,10 +32,10 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar-shell">
         <div className="brand-block">
-          <div className="brand-mark">
+          <div className="brand-mark small">
             <Activity size={14} />
           </div>
-          <div>
+          <div className="brand-copy-wrap">
             <p className="brand-title">Valen Boxing</p>
             <p className="brand-subtitle">Performance Intelligence</p>
           </div>

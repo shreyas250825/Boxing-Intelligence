@@ -1,0 +1,26 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+
+# Local runtime / model artifacts
+*.pt
+*.pth
+*.onnx
+*.weights
+
+# Large or generated media assets
+demo-videos/
+**/*.mp4
+**/*.mov
+**/*.avi
+**/*.mkv
+**/*.webm
+
+# Environment files
+.env
+.env.*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

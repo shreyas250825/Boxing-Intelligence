@@ -17,7 +17,14 @@ def register_user(data: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=error_response("AUTH_INVALID", str(exc))['error']) from exc
 
     token = auth_service.generate_token(user)
-    return success_response(AuthTokenResponse(token=token, user=UserPublic.model_validate(user)).model_dump())
+    payload = UserPublic.model_validate(user).model_dump()
+    return success_response({
+        "token": token,
+        "email": payload["email"],
+        "full_name": payload["full_name"],
+        "role": payload["role"],
+        "user": payload,
+    })
 
 
 @router.post("/login")
@@ -28,9 +35,13 @@ def login_user(data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail=error_response("AUTH_INVALID", str(exc))['error']) from exc
 
     token = auth_service.generate_token(user)
+    payload = UserPublic.model_validate(user).model_dump()
     return success_response({
         "token": token,
-        "user": UserPublic.model_validate(user).model_dump(),
+        "email": payload["email"],
+        "full_name": payload["full_name"],
+        "role": payload["role"],
+        "user": payload,
     })
 
 
