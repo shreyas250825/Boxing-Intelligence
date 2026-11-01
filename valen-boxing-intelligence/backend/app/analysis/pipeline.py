@@ -72,9 +72,15 @@ def run_analysis_pipeline(job_id: str, db: Session) -> None:
         # Stage 4: Sample frames for downstream analysis
         frames = sample_frames(file_path, interval_seconds=interval, max_frames=max_frames)
 
-        # Stage 5: Real person detection and pose estimation using installed CV models
+        # Stage 5: Real person detection and pose estimation using installed CV models.
+        # Fail explicitly if the model stack is unavailable so we do not silently generate empty evidence.
         detector = PersonDetector(conf_threshold=0.35)
         pose_estimator = PoseEstimator()
+        if not detector.is_ready:
+            raise RuntimeError(f"Person detection is unavailable: {detector.load_error}")
+        if not pose_estimator.is_ready:
+            raise RuntimeError(f"Pose estimation is unavailable: {pose_estimator.load_error}")
+
         detections = []
         pose_results = []
         boxer_events = []

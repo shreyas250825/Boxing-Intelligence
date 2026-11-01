@@ -8,9 +8,10 @@ from app.models.metric import Metric
 from app.models.observation import Observation
 from app.models.report import Report
 from app.models.browser_analysis import BrowserVideoAnalysis
+from app.models.user import User
 
 __all__ = [
     "Boxer", "FightCamp", "TrainingSession", "Video",
     "AnalysisJob", "AnalysisResult", "Metric", "Observation", "Report",
-    "BrowserVideoAnalysis"
+    "BrowserVideoAnalysis", "User"
 ]

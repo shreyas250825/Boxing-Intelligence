@@ -55,13 +55,25 @@ class PoseEstimator:
 
     def __init__(self):
         self.model = None
+        self.load_error: Optional[str] = None
         if YOLO is not None:
             try:
                 self.model = YOLO("yolov8n-pose.pt")
                 self.model.to("cpu")
-            except Exception:
+            except Exception as exc:  # pragma: no cover - environment-dependent branch
                 self.model = None
+                self.load_error = f"{type(exc).__name__}: {exc}"
         self.mediapipe = mp is not None
+        if self.model is None and not self.mediapipe:
+            self.load_error = self.load_error or "Pose estimation dependencies are unavailable."
+
+    @property
+    def status(self) -> str:
+        return "ready" if self.model is not None or self.mediapipe else "unavailable"
+
+    @property
+    def is_ready(self) -> bool:
+        return self.model is not None or self.mediapipe
 
     def _normalize_keypoints(self, keypoints: List[List[float]], confidence: Optional[List[float]] = None) -> Dict[str, Dict[str, float]]:
         normalized: Dict[str, Dict[str, float]] = {}
@@ -80,6 +92,9 @@ class PoseEstimator:
         return normalized
 
     def estimate(self, frame: np.ndarray, bbox: Optional[tuple[float, float, float, float]] = None) -> Optional[PoseEstimate]:
+        if not self.is_ready:
+            raise RuntimeError(self.load_error or "Pose estimation is unavailable.")
+
         candidate = frame
         if bbox is not None:
             h, w = frame.shape[:2]

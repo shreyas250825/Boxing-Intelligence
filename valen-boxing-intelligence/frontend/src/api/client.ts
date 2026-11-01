@@ -8,7 +8,21 @@ export const apiClient = axios.create({
   timeout: 30000,
 })
 
-// Unwrap the success envelope automatically
+apiClient.interceptors.request.use((config) => {
+  const stored = localStorage.getItem('valen-auth')
+  if (stored) {
+    try {
+      const { token } = JSON.parse(stored)
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    } catch {
+      localStorage.removeItem('valen-auth')
+    }
+  }
+  return config
+})
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ error: { code: string; message: string; details?: unknown } }>) => {

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.responses import global_exception_handler
 from app.core.database import init_db
+from app.api.v1.auth import router as auth_router
 from app.api.v1.boxers import router as boxers_router
 from app.api.v1.fight_camps import router as fight_camps_router
 from app.api.v1.videos import router as videos_router
@@ -13,6 +14,7 @@ from app.api.v1.observations import router as observations_router
 from app.api.v1.progress import router as progress_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.browser_analysis import router as browser_analysis_router
+import app.models  # noqa: F401
 
 
 def check_ffmpeg() -> bool:
@@ -57,6 +59,7 @@ def health_check():
 
 
 API_PREFIX = "/api/v1"
+app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(boxers_router, prefix=API_PREFIX)
 app.include_router(fight_camps_router, prefix=API_PREFIX)
 app.include_router(videos_router, prefix=API_PREFIX)

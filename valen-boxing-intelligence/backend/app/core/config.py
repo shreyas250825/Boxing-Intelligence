@@ -1,5 +1,7 @@
 ﻿import functools
 from typing import List
+
+import email_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +15,8 @@ class Settings(BaseSettings):
     MAX_UPLOAD_BYTES: int = 2_147_483_648  # 2 GB
     FRAME_INTERVAL_SECONDS: float = 0.5
     MAX_FRAMES: int = 500
+    EMAIL_VALIDATOR_TEST_ENVIRONMENT: bool = True
+    EMAIL_VALIDATOR_CHECK_DELIVERABILITY: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -32,3 +36,5 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+email_validator.TEST_ENVIRONMENT = settings.EMAIL_VALIDATOR_TEST_ENVIRONMENT
+email_validator.CHECK_DELIVERABILITY = settings.EMAIL_VALIDATOR_CHECK_DELIVERABILITY

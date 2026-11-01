@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 
 from app.analysis.events import BoxingEventDetector
+from app.analysis.person_detector import PersonDetector
+from app.analysis.pose_estimation import PoseEstimator
 from app.analysis.video_processor import VideoProcessor
 
 
@@ -58,3 +60,23 @@ def test_boxing_event_detector_creates_evidence_based_event():
     assert events[0]["event_class"] in {"jab", "cross", "lead_hook", "rear_hook", "uppercut", "unclassified_punch"}
     assert events[0]["confidence"] >= 0.0
     assert events[0]["evidence_source"] in {"model", "coach", "heuristic"}
+
+
+def test_detect_models_expose_load_status_honestly():
+    detector = PersonDetector.__new__(PersonDetector)
+    detector.model = None
+    detector.model_name = "yolov8n.pt"
+    detector.conf_threshold = 0.35
+    detector.load_error = "YOLO dependency missing"
+
+    pose = PoseEstimator.__new__(PoseEstimator)
+    pose.model = None
+    pose.mediapipe = False
+    pose.load_error = "YOLO pose weights missing"
+
+    assert detector.is_ready is False
+    assert detector.status == "unavailable"
+    assert detector.load_error == "YOLO dependency missing"
+    assert pose.is_ready is False
+    assert pose.status == "unavailable"
+    assert pose.load_error == "YOLO pose weights missing"

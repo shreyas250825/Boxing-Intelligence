@@ -33,12 +33,24 @@ class PersonDetector:
         self.model_name = model_name
         self.conf_threshold = conf_threshold
         self.model = None
-        if YOLO is not None:
-            try:
-                self.model = YOLO(model_name)
-                self.model.to("cpu")
-            except Exception:
-                self.model = None
+        self.load_error: Optional[str] = None
+        if YOLO is None:
+            self.load_error = "Ultralytics is not installed in the active Python environment."
+            return
+        try:
+            self.model = YOLO(model_name)
+            self.model.to("cpu")
+        except Exception as exc:  # pragma: no cover - environment-dependent branch
+            self.model = None
+            self.load_error = f"{type(exc).__name__}: {exc}"
+
+    @property
+    def status(self) -> str:
+        return "ready" if self.model is not None else "unavailable"
+
+    @property
+    def is_ready(self) -> bool:
+        return self.model is not None
 
     def _appearance_embedding(self, crop: Optional[np.ndarray]) -> np.ndarray:
         if crop is None or crop.size == 0:
@@ -51,7 +63,7 @@ class PersonDetector:
 
     def detect(self, frame: np.ndarray) -> List[PersonDetection]:
         if self.model is None:
-            return []
+            raise RuntimeError(self.load_error or "Person detection model is unavailable.")
 
         results = self.model(frame, classes=[0], verbose=False, imgsz=640, conf=self.conf_threshold)
         detections: List[PersonDetection] = []

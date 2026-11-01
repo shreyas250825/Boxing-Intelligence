@@ -1,9 +1,14 @@
 ﻿import React, { Component, ReactNode } from "react"
 import ReactDOM from "react-dom/client"
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom"
 import "./index.css"
 
+import { getStoredAuth } from "./api/auth"
 import LandingPage from "./pages/LandingPage"
+import LoginPage from "./pages/auth/LoginPage"
+import RegisterPage from "./pages/auth/RegisterPage"
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage"
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage"
 import AppDashboard from "./pages/app/Dashboard"
 import BoxerDirectory from "./pages/app/BoxerDirectory"
 import RegisterBoxer from "./pages/app/RegisterBoxer"
@@ -14,6 +19,17 @@ import VideoAnalysisWorkspace from "./pages/app/VideoAnalysisWorkspace"
 import ProgressTracking from "./pages/app/ProgressTracking"
 import Reports from "./pages/app/Reports"
 import AppSettings from "./pages/app/Settings"
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const location = useLocation()
+  const session = getStoredAuth()
+
+  if (!session) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+
+  return <>{children}</>
+}
 
 // Dynamic redirect: /boxers/:id -> /app/boxers/:id
 function BoxerRedirect() {
@@ -51,28 +67,26 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
-          {/* ── Public ──────────────────────────────────────── */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={getStoredAuth() ? <Navigate to="/app" replace /> : <LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* ── App ─────────────────────────────────────────── */}
-          <Route path="/app" element={<AppDashboard />} />
-          <Route path="/app/boxers" element={<BoxerDirectory />} />
-          <Route path="/app/boxers/new" element={<RegisterBoxer />} />
-          <Route path="/app/boxers/:id" element={<AthleteProfile />} />
-          <Route path="/app/boxers/:id/camps" element={<FightCampManagement />} />
-          <Route path="/app/boxers/:id/upload" element={<VideoUpload />} />
-          <Route path="/app/analysis/:videoId" element={<VideoAnalysisWorkspace />} />
-          <Route path="/app/boxers/:id/progress" element={<ProgressTracking />} />
-          <Route path="/app/boxers/:id/reports" element={<Reports />} />
-          <Route path="/app/settings" element={<AppSettings />} />
+          <Route path="/app" element={<RequireAuth><AppDashboard /></RequireAuth>} />
+          <Route path="/app/boxers" element={<RequireAuth><BoxerDirectory /></RequireAuth>} />
+          <Route path="/app/boxers/new" element={<RequireAuth><RegisterBoxer /></RequireAuth>} />
+          <Route path="/app/boxers/:id" element={<RequireAuth><AthleteProfile /></RequireAuth>} />
+          <Route path="/app/boxers/:id/camps" element={<RequireAuth><FightCampManagement /></RequireAuth>} />
+          <Route path="/app/boxers/:id/upload" element={<RequireAuth><VideoUpload /></RequireAuth>} />
+          <Route path="/app/analysis/:videoId" element={<RequireAuth><VideoAnalysisWorkspace /></RequireAuth>} />
+          <Route path="/app/boxers/:id/progress" element={<RequireAuth><ProgressTracking /></RequireAuth>} />
+          <Route path="/app/boxers/:id/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+          <Route path="/app/settings" element={<RequireAuth><AppSettings /></RequireAuth>} />
 
-          {/* ── Backwards-compat redirects ───────────────────── */}
-          {/* Static redirects */}
           <Route path="/boxers" element={<Navigate to="/app/boxers" replace />} />
           <Route path="/boxers/new" element={<Navigate to="/app/boxers/new" replace />} />
           <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
-
-          {/* Dynamic redirects — old /boxers/:id/* routes */}
           <Route path="/boxers/:id/upload" element={<BoxerSubRedirect sub="upload" />} />
           <Route path="/boxers/:id/camps" element={<BoxerSubRedirect sub="camps" />} />
           <Route path="/boxers/:id/fight-camps" element={<BoxerSubRedirect sub="camps" />} />
@@ -80,7 +94,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/boxers/:id/reports" element={<BoxerSubRedirect sub="reports" />} />
           <Route path="/boxers/:id" element={<BoxerRedirect />} />
 
-          {/* Catch-all → app dashboard (not landing page) */}
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </BrowserRouter>
