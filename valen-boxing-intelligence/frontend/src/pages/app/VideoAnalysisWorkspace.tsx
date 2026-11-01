@@ -1,5 +1,5 @@
 import {
-  useEffect, useRef, useState, useCallback, useMemo, type CSSProperties
+  useEffect, useRef, useState, useCallback, useMemo
 } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
@@ -19,22 +19,19 @@ import {
   type ActionEvent, type RoundConfig,
   type CoachSummary, type BrowserAnalysis, type TrackingPayload
 } from "../../api/analysis"
-import { clientToNorm, displayedVideoRect, normBoxFromDrag } from "../../lib/tracking/geometry"
+import { clientToNorm, displayedVideoRect } from "../../lib/tracking/geometry"
 import { grabRgba, lockProcessSize, resetProcessBudget, videoStreamPath, videoUsesCors } from "../../lib/tracking/capture"
 import { appendSample, createMovementState, resetBaseline, type MovementState } from "../../lib/tracking/movement"
 import { drawTracks } from "../../lib/tracking/drawOverlay"
-import { MEASUREMENT_LABEL, MIN_FEATURE_POINTS, type NormBox, type TrackingSample, type TrackUpdate } from "../../lib/tracking/types"
+import { MEASUREMENT_LABEL, type NormBox, type TrackingSample, type TrackUpdate } from "../../lib/tracking/types"
 import {
   cumulativeSeries, tracksFromPayload, tracksToPayload, type PersistedBoxerTrack
 } from "../../lib/tracking/persist"
-import { detectCornersDistributed } from "../../lib/tracking/lucasKanade"
-import { rgbaToGray } from "../../lib/tracking/image"
 import { buildPerformanceReport, type PerformanceReportData } from "../../lib/tracking/buildReport"
 import { fmtHms } from "../../lib/tracking/time"
 import PerformanceReport from "../../components/PerformanceReport"
 import IdentifyStage from "../../components/IdentifyStage"
-import { emptyCheckpoints, firstCheckpoint, sortedCheckpoints } from "../../lib/tracking/checkpoints"
-import type { TrackingCorrection } from "../../lib/tracking/checkpoints"
+import { emptyCheckpoints, firstCheckpoint, sortedCheckpoints, type TrackingCorrection } from "../../lib/tracking/checkpoints"
 
 
 const ACTION_TYPES = [
@@ -56,16 +53,6 @@ const ACTION_TYPES = [
 
 type BoxerTrack = PersistedBoxerTrack
 type Stage = "setup" | "identify" | "review" | "workspace" | "report"
-
-const idCtrlBtn: CSSProperties = {
-  background: "#1f2937",
-  border: "1px solid #374151",
-  color: "#e5e7eb",
-  borderRadius: 8,
-  padding: "6px 10px",
-  fontSize: 12,
-  cursor: "pointer",
-}
 
 function fmtTime(s: number) {
   const m = Math.floor(s / 60)
@@ -94,20 +81,6 @@ function emptyTrack(partial: Pick<BoxerTrack, "boxerId" | "label" | "name" | "co
     checkpoints: emptyCheckpoints(),
     corrections: [],
   }
-}
-
-function probeBox(video: HTMLVideoElement, box: NormBox): { ok: boolean; count: number } {
-  const canvas = document.createElement("canvas")
-  const grab = grabRgba(video, canvas)
-  if ("error" in grab) return { ok: false, count: 0 }
-  const gray = rgbaToGray(grab.pixels, grab.width, grab.height)
-  const points = detectCornersDistributed(gray, grab.width, grab.height, {
-    x: box.x * grab.width,
-    y: box.y * grab.height,
-    w: box.w * grab.width,
-    h: box.h * grab.height,
-  })
-  return { ok: points.length >= MIN_FEATURE_POINTS, count: points.length }
 }
 
 export default function VideoAnalysisWorkspace() {
@@ -170,15 +143,8 @@ export default function VideoAnalysisWorkspace() {
   const [showCoach, setShowCoach] = useState(false)
   const [activeBoxerIdx, setActiveBoxerIdx] = useState(0)
 
-  const [isDrawing, setIsDrawing] = useState(false)
-  const drawStart = useRef({ x: 0, y: 0 })
   const [drawnBox, setDrawnBox] = useState<NormBox | null>(null)
   const [hasSavedTracking, setHasSavedTracking] = useState(false)
-  const [identifyError, setIdentifyError] = useState("")
-  const [identifyTime, setIdentifyTime] = useState(0)
-  const [identifyDuration, setIdentifyDuration] = useState(0)
-  const [identifyPlaying, setIdentifyPlaying] = useState(false)
-  const [identifyDrawMode, setIdentifyDrawMode] = useState(false)
   const [report, setReport] = useState<PerformanceReportData | null>(null)
   const [punchPlace, setPunchPlace] = useState(false)
   const [punchMeta, setPunchMeta] = useState<{
@@ -298,6 +264,19 @@ export default function VideoAnalysisWorkspace() {
       let mv = movementRef.current[t.label] ?? createMovementState()
       mv = appendSample(mv, sample, vw, vh, u.skipDisplacement)
       movementRef.current[t.label] = mv
+      const correction: TrackingCorrection | null = u.checkpointCorrection
+        ? {
+            t: u.timestamp,
+            slot: (u.checkpointCorrection.slot === "middle" || u.checkpointCorrection.slot === "late")
+              ? u.checkpointCorrection.slot
+              : "early",
+            predictedCx: u.checkpointCorrection.predictedCx,
+            predictedCy: u.checkpointCorrection.predictedCy,
+            confirmedCx: u.checkpointCorrection.confirmedCx,
+            confirmedCy: u.checkpointCorrection.confirmedCy,
+            drift: u.checkpointCorrection.drift,
+          }
+        : null
       return {
         ...t,
         tracked: u.status === "TRACKING" || u.status === "UNCERTAIN" ? box : t.tracked,
@@ -310,9 +289,7 @@ export default function VideoAnalysisWorkspace() {
         lossIntervals: mv.openLoss ? [...mv.lossIntervals, mv.openLoss] : mv.lossIntervals,
         lastKnown: box ?? t.lastKnown,
         lastKnownTime: u.timestamp,
-        corrections: u.checkpointCorrection
-          ? [...t.corrections, { t: u.timestamp, ...u.checkpointCorrection, slot: (u.checkpointCorrection.slot === "middle" || u.checkpointCorrection.slot === "late" ? u.checkpointCorrection.slot : "early") }]
-          : t.corrections,
+        corrections: correction ? [...t.corrections, correction] : t.corrections,
       }
     })
     tracksRef.current = next
@@ -538,13 +515,6 @@ export default function VideoAnalysisWorkspace() {
     setStage("workspace")
   }
 
-  const getIdentifyNorm = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const video = identifyVideoRef.current
-    const canvas = identifyOverlayRef.current
-    if (!video || !canvas) return { x: 0, y: 0 }
-    return clientToNorm(e.clientX, e.clientY, canvas.getBoundingClientRect(), displayedVideoRect(video))
-  }
-
   const paintIdentify = useCallback(() => {
     const video = identifyVideoRef.current
     const canvas = identifyOverlayRef.current
@@ -572,67 +542,6 @@ export default function VideoAnalysisWorkspace() {
   }, [drawnBox, tracks, currentIdentifyIdx])
 
   useEffect(() => { paintIdentify() }, [paintIdentify, stage])
-
-  const handleConfirmBoxer = () => {
-    if (!drawnBox || drawnBox.w < 0.02 || drawnBox.h < 0.02) return
-    const video = identifyVideoRef.current
-    const tstamp = video?.currentTime ?? 0
-    const probe = video ? probeBox(video, drawnBox) : { ok: false, count: 0 }
-    if (!probe.ok) {
-      setIdentifyError(`Not enough interior corners (${probe.count}, need ${MIN_FEATURE_POINTS}). Pause on a clearer frame and draw a tighter box on the boxer's body, avoiding ropes and spectators.`)
-      return
-    }
-    setIdentifyError("")
-    const idx = currentIdentifyIdx
-    const box = drawnBox
-    const vw = video?.videoWidth || 0
-    const vh = video?.videoHeight || 0
-    setTracks(prev => {
-      const next = prev.map((t, i) => i === idx ? {
-        ...t,
-        bbox: box,
-        identified: true,
-        identifyTime: tstamp,
-        identifyVideoWidth: vw,
-        identifyVideoHeight: vh,
-        tracked: box,
-        lastKnown: box,
-        status: "PENDING" as const,
-        samples: [],
-        totalMovement: 0,
-        validSampleCount: 0,
-        lossIntervals: [],
-        fromSave: false,
-      } : t)
-      tracksRef.current = next
-      return next
-    })
-    movementRef.current[tracks[idx]?.label || "A"] = createMovementState()
-    setDrawnBox(null)
-    setIdentifyDrawMode(false)
-  }
-
-  const seekIdentify = (t: number) => {
-    const v = identifyVideoRef.current
-    if (!v) return
-    const dur = Number.isFinite(v.duration) ? v.duration : identifyDuration
-    v.currentTime = Math.max(0, Math.min(t, dur || t))
-    setIdentifyTime(v.currentTime)
-    paintIdentify()
-  }
-
-  const toggleIdentifyPlay = () => {
-    const v = identifyVideoRef.current
-    if (!v) return
-    if (v.paused) {
-      setIdentifyDrawMode(false)
-      void v.play()
-      setIdentifyPlaying(true)
-    } else {
-      v.pause()
-      setIdentifyPlaying(false)
-    }
-  }
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current; if (!v) return

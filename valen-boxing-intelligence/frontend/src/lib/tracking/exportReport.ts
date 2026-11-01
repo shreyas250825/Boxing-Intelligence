@@ -27,6 +27,7 @@ export function reportLines(report: PerformanceReportData): string[] {
   add(`${report.videoName}  ·  ${new Date(report.dateIso).toLocaleString()}`)
   add(`Mode: ${report.mode === "both" ? "two boxers" : "one boxer"}  ·  Duration ${fmtHms(report.videoDuration)}  ·  Status ${report.status}`)
   add(`Measurement: ${report.measurement.replace(/_/g, " ")} (not metres). Camera compensation is not applied.`)
+  add(`Data sources: movement is ${report.dataSources.movement}; punches are ${report.dataSources.punches}; coach notes are ${report.dataSources.notes}; camera claims are ${report.dataSources.camera}.`)
   if (report.insufficientData) add("Insufficient valid tracking samples. Statistics below are incomplete, not invented.")
   for (const b of report.boxers) {
     add("")

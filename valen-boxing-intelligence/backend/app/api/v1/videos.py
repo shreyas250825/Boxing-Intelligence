@@ -130,10 +130,14 @@ def stream_video(video_id: str, request: Request, db: Session = Depends(get_db))
     if not video:
         raise HTTPException(status_code=404, detail=error_response("VIDEO_NOT_FOUND", "Video not found")["error"])
 
-    storage_dir = Path(settings.STORAGE_DIR)
-    file_path = storage_dir / video.storage_filename
+    storage_dir = Path(settings.STORAGE_DIR).resolve()
+    file_path = (storage_dir / video.storage_filename).resolve(strict=False)
+    try:
+        file_path.relative_to(storage_dir)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=error_response("VIDEO_FILE_NOT_FOUND", "Video file not found on disk")["error"])
 
-    if not file_path.exists():
+    if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail=error_response("VIDEO_FILE_NOT_FOUND", "Video file not found on disk")["error"])
 
     file_size = file_path.stat().st_size

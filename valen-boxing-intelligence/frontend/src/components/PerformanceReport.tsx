@@ -40,9 +40,20 @@ export default function PerformanceReport(props: {
         <p style={{ color: "#9ca3af", fontSize: 14, marginBottom: 18 }}>
           {report.videoName} · {new Date(report.dateIso).toLocaleString()} · {fmtHms(report.videoDuration)} · {report.mode === "both" ? "Two boxers" : "One boxer"} · {report.segmentsKind === "round" ? `${report.roundConfig.num_rounds} rounds` : "time segments"}
         </p>
-        <p style={{ fontSize: 12, color: "#93c5fd", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "8px 12px", marginBottom: 24 }}>
-          Units: {MEASUREMENT_LABEL.replace(/_/g, " ")}. This is not metres or punch count. Camera compensation is not applied. Punches come only from coach tags.
-        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+          <p style={{ fontSize: 12, color: "#93c5fd", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "8px 12px" }}>
+            Units: {MEASUREMENT_LABEL.replace(/_/g, " ")}. This is not metres or punch count.
+          </p>
+          <p style={{ fontSize: 12, color: "#fbbf24", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.22)", borderRadius: 8, padding: "8px 12px" }}>
+            Movement source: {report.dataSources.movement} optical-flow estimate.
+          </p>
+          <p style={{ fontSize: 12, color: "#34d399", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 8, padding: "8px 12px" }}>
+            Punch source: {report.dataSources.punches} ({report.dataSources.punches === "coach_confirmed" ? "coach tags only" : "auto-detected"}).
+          </p>
+          <p style={{ fontSize: 12, color: "#cbd5e1", background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.18)", borderRadius: 8, padding: "8px 12px" }}>
+            Notes source: {report.dataSources.notes}. Camera claims are {report.dataSources.camera}.
+          </p>
+        </div>
         {report.insufficientData && (
           <p style={{ fontSize: 13, color: "#fbbf24", marginBottom: 16 }}>Insufficient valid tracking samples. The sections below report what was measured; missing values are not filled in.</p>
         )}

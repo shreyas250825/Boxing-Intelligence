@@ -185,24 +185,38 @@ export function movementInWindow(samples: TrackingSample[], start: number, end: 
   confidence: number
   valid: number
 } {
-  const pts = samples.filter(s => s.t >= start && s.t < end)
-  const movement = pts.reduce((s, p) => s + (p.status === "TRACKING" ? p.displacement : 0), 0)
-  const tracking = pts.filter(s => s.status === "TRACKING")
   const duration = Math.max(0, end - start)
-  let validDt = 0
-  let prev: TrackingSample | null = null
-  for (const s of tracking) {
-    if (prev && s.t > prev.t) validDt += s.t - prev.t
-    prev = s
+  if (duration <= 0) {
+    return { movement: 0, coverage: 0, confidence: 0, valid: 0 }
   }
-  const confidence = tracking.length
-    ? tracking.reduce((s, p) => s + p.confidence, 0) / tracking.length
-    : 0
+
+  let movement = 0
+  let validDt = 0
+  let confidenceTotal = 0
+  let validCount = 0
+
+  for (const { prev, curr } of validPairs(samples)) {
+    const overlapStart = Math.max(start, prev.t)
+    const overlapEnd = Math.min(end, curr.t)
+    if (overlapEnd <= overlapStart) continue
+
+    const pairDuration = Math.max(0, curr.t - prev.t)
+    if (pairDuration <= 0) continue
+
+    const overlap = overlapEnd - overlapStart
+    movement += curr.displacement * (overlap / pairDuration)
+    validDt += overlap
+    confidenceTotal += curr.confidence
+    validCount += 1
+  }
+
+  const confidence = validCount > 0 ? confidenceTotal / validCount : 0
+
   return {
     movement,
     coverage: duration > 0 ? (validDt / duration) * 100 : 0,
     confidence,
-    valid: tracking.length,
+    valid: validCount,
   }
 }
 

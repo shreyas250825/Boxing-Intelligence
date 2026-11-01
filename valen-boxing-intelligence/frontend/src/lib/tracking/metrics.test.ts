@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { actionStats, computeBoxerMetrics, overlapInterval, validPairs } from "./metrics"
+import { actionStats, computeBoxerMetrics, movementInWindow, overlapInterval, validPairs } from "./metrics"
 import { buildPerformanceReport } from "./buildReport"
 import { reportToPdfBlob } from "./exportReport"
 import type { TrackingSample } from "./types"
@@ -67,6 +67,17 @@ describe("movement metrics", () => {
     expect(m.insufficientData).toBe(true)
   })
 
+  it("allocates movement across a round boundary instead of dropping it", () => {
+    const samples = [
+      s({ t: 0, cx: 0.2, cy: 0.5, status: "TRACKING", displacement: 0 }),
+      s({ t: 8, cx: 0.8, cy: 0.5, status: "TRACKING", displacement: 1.0 }),
+    ]
+    const win = movementInWindow(samples, 4, 6)
+    expect(win.movement).toBeCloseTo(0.25, 5)
+    expect(win.coverage).toBeCloseTo(100, 5)
+    expect(win.confidence).toBeGreaterThan(0)
+  })
+
   it("does not invent punch counts from movement", () => {
     const stats = actionStats([], 1, "A")
     expect(stats.empty).toBe(true)
@@ -75,6 +86,21 @@ describe("movement metrics", () => {
 })
 
 describe("performance report", () => {
+  it("labels movement as estimated and punch tags as coach-confirmed", () => {
+    const a = track("A", [
+      s({ t: 0, cx: 0.2, cy: 0.5, status: "TRACKING", displacement: 0 }),
+      s({ t: 0.2, cx: 0.3, cy: 0.5, status: "TRACKING", displacement: 0.05 }),
+    ], 0)
+    const report = buildPerformanceReport({
+      tracks: [a], events: [{ id: "1", timestamp: 0.1, action_type: "jab", label: "Jab", boxer_label: "A", confirmed: true }], coach: {},
+      roundCfg: { num_rounds: 1, round_duration: 180, rest_duration: 0, start_offset: 0 },
+      videoName: "clip.mp4", videoId: "vid", videoDuration: 12, status: "complete",
+    })
+    expect(report.dataSources.movement).toBe("estimated")
+    expect(report.dataSources.punches).toBe("coach_confirmed")
+    expect(report.dataSources.notes).toBe("coach_entered")
+  })
+
   it("keeps two boxers independent and records unequal identification times", () => {
     const a = track("A", [
       s({ t: 3, cx: 0.2, cy: 0.5, status: "TRACKING", displacement: 0 }),

@@ -40,6 +40,13 @@ export interface BoxerReportBlock {
   }[]
 }
 
+export interface DataSourceSummary {
+  movement: "estimated"
+  punches: "coach_confirmed"
+  notes: "coach_entered"
+  camera: "not_claimed"
+}
+
 export interface PerformanceReportData {
   version: string
   measurement: string
@@ -70,6 +77,7 @@ export interface PerformanceReportData {
   events: ActionEvent[]
   roundConfig: RoundConfig
   punchDetection: "coach-confirmed-only"
+  dataSources: DataSourceSummary
 }
 
 export function buildPerformanceReport(args: {
@@ -194,6 +202,12 @@ export function buildPerformanceReport(args: {
     events: args.events,
     roundConfig: args.roundCfg,
     punchDetection: "coach-confirmed-only",
+    dataSources: {
+      movement: "estimated",
+      punches: "coach_confirmed",
+      notes: "coach_entered",
+      camera: "not_claimed",
+    },
   }
 }
 

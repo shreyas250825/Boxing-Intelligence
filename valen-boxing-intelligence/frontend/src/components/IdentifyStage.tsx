@@ -132,7 +132,7 @@ export default function IdentifyStage(props: {
     if (!v) return
     if (v.paused) {
       setDrawMode(false)
-      void v.play()
+      void v.play().catch(() => undefined)
     } else v.pause()
   }
 
@@ -230,7 +230,7 @@ export default function IdentifyStage(props: {
         <p style={{ fontSize: 13, color: "#93c5fd", marginBottom: 10, lineHeight: 1.5 }}>
           Use the controls under the video to move. Drawing is off until you tap Draw box. Switching Boxer A/B does not erase the other boxer’s checkpoints.
         </p>
-        <div style={{ position: "relative", background: "#000", border: `2px solid ${track?.color || "#3b82f6"}`, borderBottom: "none", borderRadius: "12px 12px 0 0", overflow: "hidden" }}>
+        <div style={{ position: "relative", background: "#000", border: `2px solid ${track?.color || "#3b82f6"}`, borderBottom: "1px solid transparent", borderRadius: "12px 12px 0 0", overflow: "hidden" }}>
           <video ref={videoRef} src={props.streamUrl} crossOrigin={props.streamCors ? "anonymous" : undefined} playsInline
             style={{ width: "100%", display: "block", maxHeight: "46vh", background: "#000" }}
             onTimeUpdate={e => sync(e.currentTarget)}

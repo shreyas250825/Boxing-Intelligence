@@ -4,9 +4,12 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.analysis.events import BoxingEventDetector
 from app.analysis.metadata import extract_video_metadata, MetadataExtractionError
+from app.analysis.person_detector import PersonDetector
+from app.analysis.pose_estimation import PoseEstimator
 from app.analysis.sampler import sample_frames
-from app.analysis.pose import is_mediapipe_available, run_pose_landmarker
+from app.analysis.video_processor import VideoProcessor
 from app.analysis.metrics import compute_metrics
 from app.core.config import settings
 from app.models.analysis_job import AnalysisJob
@@ -61,21 +64,77 @@ def run_analysis_pipeline(job_id: str, db: Session) -> None:
         # Stage 2: Extract metadata
         metadata = extract_video_metadata(file_path)
 
-        # Stage 3: Sample frames
+        # Stage 3: Run the real video-processing pass that yields quality metrics and scene cuts
+        processing_fps = float(config.get("processing_fps", max(1.0, min(10.0, interval * 5.0))))
+        processor = VideoProcessor(target_fps=processing_fps, max_frames=max_frames)
+        processing_summary = processor.process_video(file_path)
+
+        # Stage 4: Sample frames for downstream analysis
         frames = sample_frames(file_path, interval_seconds=interval, max_frames=max_frames)
 
-        # Stage 4: Pose estimation (optional)
-        pose_available = is_mediapipe_available()
+        # Stage 5: Real person detection and pose estimation using installed CV models
+        detector = PersonDetector(conf_threshold=0.35)
+        pose_estimator = PoseEstimator()
+        detections = []
         pose_results = []
-        if pose_available:
-            for _, frame in frames:
-                landmarks = run_pose_landmarker(frame)
-                pose_results.append(landmarks)
+        boxer_events = []
+        event_detector = BoxingEventDetector()
+        boxer_a_pose_sequence = []
 
-        # Stage 5: Compute metrics
+        for _, frame in frames:
+            detected = detector.detect(frame)
+            detections.append({
+                "frame_index": len(detections),
+                "detections": [
+                    {
+                        "bbox": box.box,
+                        "confidence": box.confidence,
+                        "center": list(box.center),
+                        "area": box.area,
+                    }
+                    for box in detected
+                ],
+            })
+
+            pose_for_frame = []
+            for detection in detected[:2]:
+                pose = pose_estimator.estimate(frame, detection.box)
+                if pose is not None:
+                    pose_for_frame.append({
+                        "bbox": detection.box,
+                        "keypoints": pose.keypoints,
+                        "confidence": pose.confidence,
+                        "source": pose.source,
+                    })
+            pose_results.append(pose_for_frame)
+            if pose_for_frame:
+                boxer_a_pose_sequence.append(pose_for_frame[0]["keypoints"])
+
+        boxer_events.extend(event_detector.detect(boxer_a_pose_sequence, boxer_id="boxer_a"))
+
+        # Stage 6: Compute metrics with a conservative interpretation of the CV evidence.
         computed = compute_metrics(metadata, frames, pose_results)
 
-        # Stage 6: Persist results
+        # Stage 7: Persist evidence and results
+        pose_available = any(len(r) > 0 for r in pose_results)
+        reports_dir = Path(settings.REPORTS_DIR)
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        evidence_path = reports_dir / f"{job_id}-cv-summary.json"
+        evidence_path.write_text(json.dumps({
+            "video_id": job.video_id,
+            "processing_summary": processing_summary,
+            "detections": detections,
+            "pose_results": pose_results,
+            "boxer_events": boxer_events,
+            "metadata": {
+                "duration_seconds": metadata.duration,
+                "width_px": metadata.width,
+                "height_px": metadata.height,
+                "fps": metadata.fps,
+                "total_frames": metadata.frame_count,
+            },
+        }, indent=2), encoding="utf-8")
+
         result = AnalysisResult(
             id=str(uuid.uuid4()),
             job_id=job_id,

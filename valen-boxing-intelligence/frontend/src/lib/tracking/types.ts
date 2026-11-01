@@ -53,7 +53,7 @@ export interface TrackUpdate {
   pendingInit?: boolean
   usedAffine?: boolean
   checkpointCorrection?: {
-    slot: string
+    slot: "early" | "middle" | "late"
     predictedCx: number
     predictedCy: number
     confirmedCx: number

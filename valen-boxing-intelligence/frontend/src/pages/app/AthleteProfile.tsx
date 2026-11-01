@@ -46,8 +46,8 @@ export default function AthleteProfile() {
         s.data.slice(0, 10).forEach(session => {
           apiClient.get(`/api/v1/boxers/${id}/sessions/${session.id}/videos`)
             .then(r => {
-              const vids = (r.data as any).data as Video[]
-              if (vids?.length > 0) setSessionVideos(prev => ({ ...prev, [session.id]: vids[0] }))
+              const vids = ((r.data as { data?: Video[] })?.data) ?? []
+              if (vids.length > 0) setSessionVideos(prev => ({ ...prev, [session.id]: vids[0] }))
             }).catch(() => {})
         })
       })
