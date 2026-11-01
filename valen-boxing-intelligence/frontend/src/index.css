@@ -26,6 +26,15 @@ html {
   background: var(--bg);
 }
 
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -714,13 +723,20 @@ img {
 }
 
 .landing-page {
+  position: relative;
   color: var(--text);
 }
 
+.landing-main {
+  padding-top: 78px;
+}
+
 .landing-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0;
+  right: 0;
+  z-index: 1000 !important;
   width: 100%;
   backdrop-filter: blur(18px);
   background: rgba(8, 14, 19, 0.72);
