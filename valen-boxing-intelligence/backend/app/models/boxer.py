@@ -41,3 +41,17 @@ class Boxer(Base):
     hydration_entries = relationship("HydrationEntry", back_populates="boxer", passive_deletes=True)
     weight_records = relationship("WeightRecord", back_populates="boxer", passive_deletes=True)
     supplement_logs = relationship("SupplementLog", back_populates="boxer", passive_deletes=True)
+
+    # AI Corner relationships
+    ai_conversations = relationship("AIConversation", back_populates="boxer", passive_deletes=True)
+    ai_memories = relationship("AIMemory", back_populates="boxer", passive_deletes=True)
+    ai_collaboration_sessions = relationship("AICollaborationSession", back_populates="boxer", passive_deletes=True)
+    ai_action_proposals = relationship("AIActionProposal", back_populates="boxer", passive_deletes=True)
+    ai_goals = relationship("AIGoal", back_populates="boxer", passive_deletes=True)
+    ai_daily_briefings = relationship("AIDailyBriefing", back_populates="boxer", passive_deletes=True)
+    ai_weekly_reviews = relationship("AIWeeklyReview", back_populates="boxer", passive_deletes=True)
+    ai_challenges = relationship("AIChallenge", back_populates="boxer", passive_deletes=True)
+    learning_progress_records = relationship("LearningProgress", back_populates="boxer", passive_deletes=True)
+    simulator_sessions = relationship("SimulatorSession", back_populates="boxer", passive_deletes=True)
+    saved_combinations = relationship("SavedCombination", back_populates="boxer", passive_deletes=True)
+    voice_transcripts = relationship("VoiceTranscript", back_populates="boxer", passive_deletes=True)
