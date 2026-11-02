@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     EMAIL_VALIDATOR_TEST_ENVIRONMENT: bool = True
     EMAIL_VALIDATOR_CHECK_DELIVERABILITY: bool = False
 
+    # AI Corner — OpenAI-compatible settings
+    # Set OPENAI_API_KEY to enable the AI Corner. Required for all LLM features.
+    OPENAI_API_KEY: str = ""
+    # Override base URL to use an alternative OpenAI-compatible provider
+    OPENAI_BASE_URL: str = ""
+    # Model to use — default gpt-4o-mini for cost efficiency
+    AI_MODEL: str = "gpt-4o-mini"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

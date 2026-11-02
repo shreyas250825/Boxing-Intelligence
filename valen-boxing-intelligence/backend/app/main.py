@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.responses import global_exception_handler
-from app.core.database import init_db
+from app.core.database import init_db, get_db
 from app.api.v1.auth import router as auth_router
 from app.api.v1.boxers import router as boxers_router
 from app.api.v1.fight_camps import router as fight_camps_router
@@ -16,6 +16,7 @@ from app.api.v1.reports import router as reports_router
 from app.api.v1.browser_analysis import router as browser_analysis_router
 from app.api.v1.development import router as development_router
 from app.api.v1.nutrition import router as nutrition_router
+from app.api.v1.ai_corner import router as ai_corner_router
 import app.models  # noqa: F401
 
 
@@ -51,6 +52,13 @@ app.add_exception_handler(Exception, global_exception_handler)
 @app.on_event("startup")
 def on_startup():
     init_db()
+    # Seed AI companions and learning lessons
+    from app.services.ai_seeder import seed_all
+    db = next(get_db())
+    try:
+        seed_all(db)
+    finally:
+        db.close()
 
 
 @app.get("/health", tags=["health"])
@@ -74,3 +82,4 @@ app.include_router(reports_router, prefix=API_PREFIX)
 app.include_router(browser_analysis_router, prefix=API_PREFIX)
 app.include_router(development_router, prefix=API_PREFIX)
 app.include_router(nutrition_router, prefix=API_PREFIX)
+app.include_router(ai_corner_router, prefix=API_PREFIX)
