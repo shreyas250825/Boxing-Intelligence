@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 from urllib.parse import urlparse
 
 from sqlalchemy import create_engine, event, text
@@ -13,13 +13,31 @@ class Base(DeclarativeBase):
 
 
 def _ensure_sqlite_dir(url: str) -> None:
-    """Create the parent directory for a SQLite file before the engine opens it."""
+    """Create the parent directory for a SQLite file before the engine opens it.
+
+    urlparse("sqlite:///./data/foo.db").path returns "/./data/foo.db" — the
+    leading "/" makes Path.is_absolute() return True on POSIX, silently
+    skipping the cwd-join branch.  Strip the leading "/" first, then decide
+    relative vs absolute from the *original* URL string.
+    """
     parsed = urlparse(url)
-    if parsed.scheme == "sqlite" and parsed.path not in ("", ":memory:"):
-        db_path = Path(parsed.path)
-        if not db_path.is_absolute():
-            db_path = Path.cwd() / db_path
-        db_path.parent.mkdir(parents=True, exist_ok=True)
+    if parsed.scheme != "sqlite":
+        return
+    raw_path = parsed.path          # e.g. "/./data/foo.db"  or  "/tmp/foo.db"
+    if raw_path in ("", ":memory:"):
+        return
+
+    # Strip the "/" that urlparse always prepends to the path component.
+    stripped = raw_path.lstrip("/")  # "./data/foo.db"  or  "tmp/foo.db"
+
+    if stripped.startswith("."):
+        # Relative URL (sqlite:///./...) — resolve against working directory.
+        db_path = Path.cwd() / stripped
+    else:
+        # Absolute URL (sqlite:////tmp/...) — restore the leading slash.
+        db_path = Path("/" + stripped)
+
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def _make_engine():
