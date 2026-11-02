@@ -19,6 +19,12 @@ import VideoAnalysisWorkspace from "./pages/app/VideoAnalysisWorkspace"
 import ProgressTracking from "./pages/app/ProgressTracking"
 import Reports from "./pages/app/Reports"
 import AppSettings from "./pages/app/Settings"
+import DevelopmentWorkspace from "./pages/app/DevelopmentWorkspace"
+import NutritionWorkspace from "./pages/app/NutritionWorkspace"
+import CoachCommandCenter from "./pages/app/CoachCommandCenter"
+import PerformanceComparison from "./pages/app/PerformanceComparison"
+import TrainingCalendar from "./pages/app/TrainingCalendar"
+import CampPlanner from "./pages/app/CampPlanner"
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation()
@@ -77,7 +83,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/app/boxers" element={<RequireAuth><BoxerDirectory /></RequireAuth>} />
           <Route path="/app/boxers/new" element={<RequireAuth><RegisterBoxer /></RequireAuth>} />
           <Route path="/app/boxers/:id" element={<RequireAuth><AthleteProfile /></RequireAuth>} />
+          <Route path="/app/coach" element={<RequireAuth><CoachCommandCenter /></RequireAuth>} />
+          <Route path="/app/coach/compare" element={<RequireAuth><PerformanceComparison /></RequireAuth>} />
+          <Route path="/app/coach/calendar" element={<RequireAuth><TrainingCalendar /></RequireAuth>} />
+          <Route path="/app/coach/planner" element={<RequireAuth><CampPlanner /></RequireAuth>} />
           <Route path="/app/boxers/:id/camps" element={<RequireAuth><FightCampManagement /></RequireAuth>} />
+          <Route path="/app/boxers/:id/nutrition" element={<RequireAuth><NutritionWorkspace /></RequireAuth>} />
+          <Route path="/app/boxers/:id/development" element={<RequireAuth><DevelopmentWorkspace /></RequireAuth>} />
           <Route path="/app/boxers/:id/upload" element={<RequireAuth><VideoUpload /></RequireAuth>} />
           <Route path="/app/analysis/:videoId" element={<RequireAuth><VideoAnalysisWorkspace /></RequireAuth>} />
           <Route path="/app/boxers/:id/progress" element={<RequireAuth><ProgressTracking /></RequireAuth>} />
@@ -89,6 +101,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
           <Route path="/boxers/:id/upload" element={<BoxerSubRedirect sub="upload" />} />
           <Route path="/boxers/:id/camps" element={<BoxerSubRedirect sub="camps" />} />
+          <Route path="/boxers/:id/nutrition" element={<BoxerSubRedirect sub="nutrition" />} />
+          <Route path="/boxers/:id/development" element={<BoxerSubRedirect sub="development" />} />
           <Route path="/boxers/:id/fight-camps" element={<BoxerSubRedirect sub="camps" />} />
           <Route path="/boxers/:id/progress" element={<BoxerSubRedirect sub="progress" />} />
           <Route path="/boxers/:id/reports" element={<BoxerSubRedirect sub="reports" />} />

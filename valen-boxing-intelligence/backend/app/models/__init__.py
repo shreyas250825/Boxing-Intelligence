@@ -9,9 +9,13 @@ from app.models.observation import Observation
 from app.models.report import Report
 from app.models.browser_analysis import BrowserVideoAnalysis
 from app.models.user import User
+from app.models.development import DevelopmentGoal, TrainingJournalEntry, SkillAssessment, RecoveryCheckin, CompetitionPlan
+from app.models.nutrition import NutritionProfile, FoodEntry, MealPlan, HydrationEntry, WeightRecord, SupplementLog
 
 __all__ = [
     "Boxer", "FightCamp", "TrainingSession", "Video",
     "AnalysisJob", "AnalysisResult", "Metric", "Observation", "Report",
-    "BrowserVideoAnalysis", "User"
+    "BrowserVideoAnalysis", "User",
+    "DevelopmentGoal", "TrainingJournalEntry", "SkillAssessment", "RecoveryCheckin", "CompetitionPlan",
+    "NutritionProfile", "FoodEntry", "MealPlan", "HydrationEntry", "WeightRecord", "SupplementLog",
 ]

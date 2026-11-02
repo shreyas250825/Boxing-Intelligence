@@ -728,15 +728,15 @@ img {
 }
 
 .landing-main {
-  padding-top: 78px;
+  padding-top: 0;
 }
 
 .landing-header {
-  position: fixed !important;
-  top: 0 !important;
+  position: sticky;
+  top: 0;
   left: 0;
   right: 0;
-  z-index: 1000 !important;
+  z-index: 1000;
   width: 100%;
   backdrop-filter: blur(18px);
   background: rgba(8, 14, 19, 0.72);

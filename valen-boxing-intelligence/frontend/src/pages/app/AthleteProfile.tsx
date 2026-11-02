@@ -9,7 +9,7 @@ import type { Boxer, TrainingSession, Video } from "../../types"
 import {
   Upload, TrendingUp, FileText, Sword, Archive,
   Video as VideoIcon, PlusCircle, ArrowLeft, PlayCircle,
-  Edit3, Check, X, Trash2, AlertTriangle
+  Edit3, Check, X, Trash2, AlertTriangle, Target, Flame
 } from "lucide-react"
 
 const WEIGHTS = ["Strawweight","Light Flyweight","Flyweight","Bantamweight","Featherweight","Lightweight","Welterweight","Middleweight","Light Heavyweight","Cruiserweight","Heavyweight"]
@@ -113,6 +113,8 @@ export default function AthleteProfile() {
   const actions = [
     { icon: Upload,     label: "Upload Video", to: `/app/boxers/${id}/upload` },
     { icon: Sword,      label: "Fight Camps",  to: `/app/boxers/${id}/camps` },
+    { icon: Flame,      label: "Nutrition",    to: `/app/boxers/${id}/nutrition` },
+    { icon: Target,     label: "Development", to: `/app/boxers/${id}/development` },
     { icon: TrendingUp, label: "Progress",     to: `/app/boxers/${id}/progress` },
     { icon: FileText,   label: "Reports",      to: `/app/boxers/${id}/reports` },
   ]

@@ -10,10 +10,17 @@ import {
   LogOut,
   BarChart3,
   PlayCircle,
+  Target,
+  CalendarDays,
+  Dumbbell,
 } from "lucide-react"
 
 const navItems = [
   { to: "/app", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/app/coach", icon: Target, label: "Coach Center" },
+  { to: "/app/coach/calendar", icon: CalendarDays, label: "Calendar" },
+  { to: "/app/coach/planner", icon: Dumbbell, label: "Planner" },
+  { to: "/app/coach/compare", icon: BarChart3, label: "Compare" },
   { to: "/app/boxers", icon: Users, label: "Athletes" },
   { to: "/app/analysis/demo", icon: PlayCircle, label: "Video Analysis" },
   { to: "/app/boxers/new", icon: PlusCircle, label: "Register Athlete" },

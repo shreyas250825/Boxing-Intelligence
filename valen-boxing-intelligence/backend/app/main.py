@@ -14,6 +14,8 @@ from app.api.v1.observations import router as observations_router
 from app.api.v1.progress import router as progress_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.browser_analysis import router as browser_analysis_router
+from app.api.v1.development import router as development_router
+from app.api.v1.nutrition import router as nutrition_router
 import app.models  # noqa: F401
 
 
@@ -70,3 +72,5 @@ app.include_router(observations_router, prefix=API_PREFIX)
 app.include_router(progress_router, prefix=API_PREFIX)
 app.include_router(reports_router, prefix=API_PREFIX)
 app.include_router(browser_analysis_router, prefix=API_PREFIX)
+app.include_router(development_router, prefix=API_PREFIX)
+app.include_router(nutrition_router, prefix=API_PREFIX)

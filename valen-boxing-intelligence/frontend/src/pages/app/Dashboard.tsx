@@ -99,6 +99,22 @@ export default function Dashboard() {
               action: () => nav("/app/boxers"),
               cta: "Open directory",
             },
+            {
+              title: "Nutrition & Recovery",
+              desc: "Track intake, hydration and weight targets for each athlete in one practical workspace.",
+              icon: Activity,
+              color: "violet",
+              action: () => nav("/app/boxers"),
+              cta: "Open athlete workspace",
+            },
+            {
+              title: "Coach Command Center",
+              desc: "Review athlete readiness, training load and priorities across the full boxing roster.",
+              icon: Activity,
+              color: "violet",
+              action: () => nav("/app/coach"),
+              cta: "Open coach view",
+            },
           ].map(({ title, desc, icon: Icon, color, action, cta }) => (
             <button key={title} onClick={action} className="quick-card">
               <div className={`quick-icon ${color}`}>
