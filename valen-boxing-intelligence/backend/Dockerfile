@@ -12,6 +12,9 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini .
 
+# Pre-create writable directories so SQLite and file uploads work out of the box
+RUN mkdir -p /app/data/videos /app/data/reports
+
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 

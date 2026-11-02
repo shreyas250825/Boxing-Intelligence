@@ -119,6 +119,13 @@ export default function AthleteProfile() {
     { icon: FileText,   label: "Reports",      to: `/app/boxers/${id}/reports` },
   ]
 
+  const handleOpenAICorner = () => {
+    if (id) {
+      localStorage.setItem('valen-selected-boxer', id)
+      nav('/app/ai-corner')
+    }
+  }
+
   const set = (k: string, v: string) => setEditForm(f => ({ ...f, [k]: v }))
 
   return (
@@ -264,6 +271,13 @@ export default function AthleteProfile() {
               <p className="text-xs font-medium text-gray-600 group-hover:text-gray-900">{label}</p>
             </button>
           ))}
+          <button
+            onClick={handleOpenAICorner}
+            className="card p-4 text-center hover:border-orange-300 hover:shadow-md transition-all group cursor-pointer border-orange-500/20 bg-orange-500/5"
+          >
+            <span className="text-xl block mb-1">🧠</span>
+            <p className="text-xs font-medium text-orange-600 group-hover:text-orange-800">AI Corner</p>
+          </button>
         </div>
 
         {/* Details + sessions */}

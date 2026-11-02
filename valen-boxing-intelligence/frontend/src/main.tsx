@@ -26,6 +26,18 @@ import PerformanceComparison from "./pages/app/PerformanceComparison"
 import TrainingCalendar from "./pages/app/TrainingCalendar"
 import CampPlanner from "./pages/app/CampPlanner"
 
+// AI Corner pages
+import AICornerHome from "./pages/app/ai-corner/AICornerHome"
+import CompanionChat from "./pages/app/ai-corner/CompanionChat"
+import AIGoals from "./pages/app/ai-corner/AIGoals"
+import AIMemoryPage from "./pages/app/ai-corner/AIMemory"
+import LearningCentre from "./pages/app/ai-corner/LearningCentre"
+import AskMyData from "./pages/app/ai-corner/AskMyData"
+import BoxingSimulator from "./pages/app/ai-corner/BoxingSimulator"
+import WeeklyReview from "./pages/app/ai-corner/WeeklyReview"
+import AIChallenges from "./pages/app/ai-corner/AIChallenges"
+import ConversationHistory from "./pages/app/ai-corner/ConversationHistory"
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation()
   const session = getStoredAuth()
@@ -96,6 +108,20 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/app/boxers/:id/reports" element={<RequireAuth><Reports /></RequireAuth>} />
           <Route path="/app/settings" element={<RequireAuth><AppSettings /></RequireAuth>} />
 
+          {/* AI Corner — specific routes MUST come before the :slug catch-all */}
+          <Route path="/app/ai-corner" element={<RequireAuth><AICornerHome /></RequireAuth>} />
+          <Route path="/app/ai-corner/goals" element={<RequireAuth><AIGoals /></RequireAuth>} />
+          <Route path="/app/ai-corner/memory" element={<RequireAuth><AIMemoryPage /></RequireAuth>} />
+          <Route path="/app/ai-corner/learning" element={<RequireAuth><LearningCentre /></RequireAuth>} />
+          <Route path="/app/ai-corner/ask-my-data" element={<RequireAuth><AskMyData /></RequireAuth>} />
+          <Route path="/app/ai-corner/simulator" element={<RequireAuth><BoxingSimulator /></RequireAuth>} />
+          <Route path="/app/ai-corner/weekly-review" element={<RequireAuth><WeeklyReview /></RequireAuth>} />
+          <Route path="/app/ai-corner/challenges" element={<RequireAuth><AIChallenges /></RequireAuth>} />
+          <Route path="/app/ai-corner/history" element={<RequireAuth><ConversationHistory /></RequireAuth>} />
+          {/* Companion chat — :slug must come LAST among /app/ai-corner/* routes */}
+          <Route path="/app/ai-corner/:slug" element={<RequireAuth><CompanionChat /></RequireAuth>} />
+          <Route path="/app/ai-corner/challenges" element={<RequireAuth><AIChallenges /></RequireAuth>} />
+          <Route path="/app/ai-corner/history" element={<RequireAuth><ConversationHistory /></RequireAuth>} />
           <Route path="/boxers" element={<Navigate to="/app/boxers" replace />} />
           <Route path="/boxers/new" element={<Navigate to="/app/boxers/new" replace />} />
           <Route path="/settings" element={<Navigate to="/app/settings" replace />} />

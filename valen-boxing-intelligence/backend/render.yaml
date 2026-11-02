@@ -11,7 +11,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false
+        value: "http://localhost:5173,https://boxing-intelligence.vercel.app"
       - key: STORAGE_DIR
         value: /var/data/videos
       - key: REPORTS_DIR

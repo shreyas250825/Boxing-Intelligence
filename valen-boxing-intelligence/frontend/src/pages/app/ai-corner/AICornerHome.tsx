@@ -5,39 +5,18 @@ import {
   Zap,
   Target,
   Trophy,
-  BookOpen,
   MessageSquare,
   ChevronRight,
   Sparkles,
   RefreshCw,
   AlertCircle,
   Bot,
-  Dumbbell,
-  Salad,
-  Moon,
-  Camera,
-  Heart,
-  GraduationCap,
 } from 'lucide-react'
 import Layout from '../../../components/Layout'
 import { fetchCornerHome, fetchDailyBriefing, type CornerHome, type DailyBriefing } from '../../../api/aiCorner'
-import { getStoredAuth } from '../../../api/auth'
 
-const COMPANION_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  'coach-valen': Dumbbell,
-  'nutricoach': Salad,
-  'recoverai': Moon,
-  'corneriq': Target,
-  'visionbox': Camera,
-  'mindcorner': Heart,
-  'performancelab': Zap,
-  'boxing-academy': GraduationCap,
-}
-
-// Grabs boxer_id from auth — in production this would come from a selector or user profile
+// Grabs boxer_id from localStorage after boxer selection
 function useBoxerId(): string | null {
-  const session = getStoredAuth()
-  // Using stored boxer_id if it exists (set after selecting a boxer), else null
   const stored = localStorage.getItem('valen-selected-boxer')
   return stored || null
 }
@@ -48,17 +27,13 @@ export default function AICornerHome() {
   const [home, setHome] = useState<CornerHome | null>(null)
   const [briefing, setBriefing] = useState<DailyBriefing | null>(null)
   const [briefingMissing, setBriefingMissing] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
   const [briefingLoading, setBriefingLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!boxerId) return
-    setLoading(true)
     fetchCornerHome(boxerId)
       .then(setHome)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
+      .catch(() => {})
   }, [boxerId])
 
   const loadBriefing = () => {
@@ -171,7 +146,6 @@ export default function AICornerHome() {
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Your AI Team</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {(home?.companions || FALLBACK_COMPANIONS).map((c) => {
-              const Icon = COMPANION_ICONS[c.slug] || Bot
               return (
                 <button
                   key={c.slug}
