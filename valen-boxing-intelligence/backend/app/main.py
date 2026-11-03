@@ -36,9 +36,16 @@ app = FastAPI(
 
 init_db()
 
+# Build the full allowed-origins list: env var list + hardcoded production origins
+_PRODUCTION_ORIGINS = [
+    "https://boxing-intelligence.vercel.app",
+    "https://boxing-intelligence.onrender.com",
+]
+_cors_origins = list(dict.fromkeys(settings.cors_origins_list + _PRODUCTION_ORIGINS))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=_cors_origins,
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
@@ -63,10 +70,18 @@ def on_startup():
 
 @app.get("/health", tags=["health"])
 def health_check():
+    from app.services.ai_service import check_ollama_health
+    ai = check_ollama_health()
     return {
         "status": "ok",
         "ffmpeg_available": check_ffmpeg(),
         "version": "2.0.0",
+        "ai": {
+            "available": ai["available"],
+            "model": ai["model"],
+            "model_installed": ai["model_installed"],
+            "error": ai.get("error"),
+        },
     }
 
 
