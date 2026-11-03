@@ -14,7 +14,7 @@ export default function SessionAnnotations() {
   const [observations, setObservations] = useState<Observation[]>([])
   const [duration, setDuration] = useState(0)
   const [videoError, setVideoError] = useState("")
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://boxing-intelligence.onrender.com"
 
   useEffect(() => {
     if (!id) return

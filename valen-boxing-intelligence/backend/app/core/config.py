@@ -18,13 +18,20 @@ class Settings(BaseSettings):
     EMAIL_VALIDATOR_TEST_ENVIRONMENT: bool = True
     EMAIL_VALIDATOR_CHECK_DELIVERABILITY: bool = False
 
-    # AI Corner — OpenAI-compatible settings
-    # Set OPENAI_API_KEY to enable the AI Corner. Required for all LLM features.
-    OPENAI_API_KEY: str = ""
-    # Override base URL to use an alternative OpenAI-compatible provider
-    OPENAI_BASE_URL: str = ""
-    # Model to use — default gpt-4o-mini for cost efficiency
-    AI_MODEL: str = "gpt-4o-mini"
+    # -----------------------------------------------------------------------
+    # AI Corner — Ollama local server configuration
+    # -----------------------------------------------------------------------
+    # URL of the running Ollama server. Backend and Ollama run on the same
+    # machine in local mode. Never expose Ollama's port publicly.
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+
+    # Model to use. Run `ollama pull <model>` before starting.
+    # Verified models: llama3:latest, qwen2.5-coder:7b
+    OLLAMA_MODEL: str = "llama3:latest"
+
+    # Maximum seconds to wait for a generation response.
+    # Increase if using a large model on slow hardware.
+    OLLAMA_TIMEOUT_SECONDS: float = 120.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,77 +1,182 @@
 """
-AI Corner service layer.
+AI Corner service layer — Ollama-only provider.
 
-All language-model calls go through this module.
-Provider: OpenAI-compatible (default: OpenAI gpt-4o-mini, configurable).
-The service gracefully degrades when credentials are absent — it never
-returns fake AI responses; it raises a clear configuration error instead.
+All language-model calls go through this module. The application connects
+exclusively to a local Ollama server. There is no OpenAI, Anthropic, or any
+other cloud provider dependency.
+
+Architecture note
+-----------------
+This application runs locally (frontend + backend + Ollama all on the same
+machine). The backend calls Ollama at OLLAMA_BASE_URL (default:
+http://localhost:11434). Never expose the Ollama port publicly.
+
+Configuration (via backend/.env)
+---------------------------------
+  OLLAMA_BASE_URL=http://localhost:11434   # Ollama server address
+  OLLAMA_MODEL=llama3:latest              # Model must be pulled first
+
+Run `ollama pull <model>` before starting the application.
+
+Supported Ollama models (tested):
+  llama3:latest — recommended for general boxing conversations
+  qwen2.5-coder:7b — usable but optimised for code
+  Any model installed via `ollama pull`
+
+Error codes raised (all HTTP exceptions):
+  AI_NOT_CONFIGURED  — OLLAMA_BASE_URL unreachable or model not available
+  AI_MODEL_NOT_FOUND — Model named in OLLAMA_MODEL is not installed
+  AI_TIMEOUT         — Generation took longer than OLLAMA_TIMEOUT_SECONDS
+  AI_API_ERROR       — Any other Ollama error
 """
 from __future__ import annotations
 
 import json
 import logging
 import os
-from typing import Any, Generator, Iterator
+import time
+from typing import Any, Iterator
 
+import httpx
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Provider abstraction
+# Configuration helpers — read from environment every call so hot-reload works
 # ---------------------------------------------------------------------------
 
-def _get_openai_client():
+def _base_url() -> str:
+    return os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+
+def _model() -> str:
+    return os.environ.get("OLLAMA_MODEL", "llama3:latest").strip()
+
+def _timeout() -> float:
+    try:
+        return float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "120"))
+    except ValueError:
+        return 120.0
+
+
+# ---------------------------------------------------------------------------
+# Health check — verify Ollama is reachable and the model is available
+# ---------------------------------------------------------------------------
+
+def check_ollama_health() -> dict[str, Any]:
     """
-    Return an OpenAI client or raise a clean 503 if credentials are missing.
-    Delay import so the app boots without openai installed.
+    Returns a dict with keys:
+      available: bool
+      model: str
+      model_installed: bool
+      error: str | None
     """
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
+    base = _base_url()
+    model = _model()
+
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            resp = client.get(f"{base}/api/tags")
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.ConnectError:
+        return {
+            "available": False,
+            "model": model,
+            "model_installed": False,
+            "error": f"Cannot connect to Ollama at {base}. Is Ollama running? Run: ollama serve",
+        }
+    except Exception as exc:
+        return {
+            "available": False,
+            "model": model,
+            "model_installed": False,
+            "error": f"Ollama health check failed: {exc}",
+        }
+
+    installed = [m.get("name", "") for m in data.get("models", [])]
+    model_ok = any(m == model or m.startswith(model.split(":")[0]) for m in installed)
+
+    return {
+        "available": True,
+        "model": model,
+        "model_installed": model_ok,
+        "installed_models": installed,
+        "error": None if model_ok else (
+            f"Model '{model}' is not installed. Run: ollama pull {model}. "
+            f"Available models: {', '.join(installed) or 'none'}"
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Internal: require Ollama is up and model is ready
+# ---------------------------------------------------------------------------
+
+def _require_ollama() -> tuple[str, str]:
+    """Return (base_url, model) or raise 503."""
+    base = _base_url()
+    model = _model()
+
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            resp = client.get(f"{base}/api/tags")
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.ConnectError:
         raise HTTPException(
             status_code=503,
             detail={
                 "error": {
                     "code": "AI_NOT_CONFIGURED",
                     "message": (
-                        "The AI Corner requires an OpenAI API key. "
-                        "Set OPENAI_API_KEY in your backend .env file. "
-                        "No fake responses will be shown."
+                        f"Cannot connect to Ollama at {base}. "
+                        "Make sure Ollama is running (ollama serve) and "
+                        "OLLAMA_BASE_URL is set correctly in backend/.env."
                     ),
                 }
             },
         )
-    try:
-        from openai import OpenAI  # type: ignore
-    except ImportError as exc:
+    except Exception as exc:
         raise HTTPException(
             status_code=503,
             detail={
                 "error": {
-                    "code": "AI_PACKAGE_MISSING",
+                    "code": "AI_NOT_CONFIGURED",
+                    "message": f"Ollama health check failed: {exc}",
+                }
+            },
+        )
+
+    installed = [m.get("name", "") for m in data.get("models", [])]
+    model_ok = any(m == model or m.startswith(model.split(":")[0]) for m in installed)
+    if not model_ok:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": {
+                    "code": "AI_MODEL_NOT_FOUND",
                     "message": (
-                        "The openai Python package is not installed. "
-                        "Run: pip install openai"
+                        f"Model '{model}' is not installed in Ollama. "
+                        f"Run: ollama pull {model}. "
+                        f"Available: {', '.join(installed) or 'none'}"
                     ),
                 }
             },
-        ) from exc
-    base_url = os.environ.get("OPENAI_BASE_URL", "").strip() or None
-    return OpenAI(api_key=api_key, base_url=base_url)
+        )
 
-
-def _get_model() -> str:
-    return os.environ.get("AI_MODEL", "gpt-4o-mini").strip()
+    return base, model
 
 
 # ---------------------------------------------------------------------------
-# Token budget: only fetch what each companion needs
+# Token budget — trim old messages to stay within context window
 # ---------------------------------------------------------------------------
 
-def _trim_messages(messages: list[dict], max_chars: int = 80_000) -> list[dict]:
+def _trim_messages(messages: list[dict], max_chars: int = 60_000) -> list[dict]:
     """
-    Trim oldest non-system messages if the context would exceed max_chars.
-    System message is always preserved.
+    Trim the oldest non-system messages when the context is too large.
+    System message is always preserved. Local models have smaller context
+    windows than cloud APIs, so the default limit is lower (60 k chars).
     """
     total = sum(len(m.get("content", "")) for m in messages)
     if total <= max_chars:
@@ -97,39 +202,74 @@ def chat_complete(
     max_tokens: int = 1500,
 ) -> dict[str, Any]:
     """
-    Send a chat completion request.
+    Send a chat completion request to Ollama.
     Returns {'content': str, 'prompt_tokens': int, 'completion_tokens': int}.
     """
-    client = _get_openai_client()
-    model = _get_model()
-
+    base, model = _require_ollama()
     trimmed = _trim_messages(messages)
+    timeout = _timeout()
+
+    payload = {
+        "model": model,
+        "messages": trimmed,
+        "stream": False,
+        "options": {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        },
+    }
 
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=trimmed,  # type: ignore[arg-type]
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-    except Exception as exc:
-        logger.error("OpenAI API error: %s", exc)
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(f"{base}/api/chat", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.TimeoutException as exc:
+        logger.error("Ollama timeout after %.0fs: %s", timeout, exc)
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "error": {
+                    "code": "AI_TIMEOUT",
+                    "message": (
+                        f"The AI model took too long to respond (>{timeout:.0f}s). "
+                        "Try a shorter message or a faster model. "
+                        "Adjust OLLAMA_TIMEOUT_SECONDS in backend/.env."
+                    ),
+                }
+            },
+        ) from exc
+    except httpx.HTTPStatusError as exc:
+        logger.error("Ollama HTTP error: %s", exc)
         raise HTTPException(
             status_code=502,
             detail={
                 "error": {
                     "code": "AI_API_ERROR",
-                    "message": f"AI provider returned an error: {exc}",
+                    "message": f"Ollama returned an error: {exc.response.status_code} {exc.response.text[:200]}",
+                }
+            },
+        ) from exc
+    except Exception as exc:
+        logger.error("Ollama request failed: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": {
+                    "code": "AI_API_ERROR",
+                    "message": f"Ollama request failed: {exc}",
                 }
             },
         ) from exc
 
-    choice = response.choices[0]
-    usage = response.usage
+    content = data.get("message", {}).get("content", "")
+    prompt_tokens = data.get("prompt_eval_count", 0)
+    completion_tokens = data.get("eval_count", 0)
+
     return {
-        "content": choice.message.content or "",
-        "prompt_tokens": usage.prompt_tokens if usage else 0,
-        "completion_tokens": usage.completion_tokens if usage else 0,
+        "content": content,
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
     }
 
 
@@ -143,34 +283,58 @@ def chat_stream(
     max_tokens: int = 1500,
 ) -> Iterator[str]:
     """
-    Yield text chunks from a streaming chat completion.
+    Yield text chunks from a streaming Ollama chat completion.
     Each yielded value is a plain text delta string.
     """
-    client = _get_openai_client()
-    model = _get_model()
-
+    base, model = _require_ollama()
     trimmed = _trim_messages(messages)
+    timeout = _timeout()
+
+    payload = {
+        "model": model,
+        "messages": trimmed,
+        "stream": True,
+        "options": {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        },
+    }
 
     try:
-        stream = client.chat.completions.create(
-            model=model,
-            messages=trimmed,  # type: ignore[arg-type]
-            temperature=temperature,
-            max_tokens=max_tokens,
-            stream=True,
-        )
-        for chunk in stream:
-            delta = chunk.choices[0].delta.content if chunk.choices else None
-            if delta:
-                yield delta
+        with httpx.Client(timeout=timeout) as client:
+            with client.stream("POST", f"{base}/api/chat", json=payload) as resp:
+                resp.raise_for_status()
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    delta = chunk.get("message", {}).get("content", "")
+                    if delta:
+                        yield delta
+                    if chunk.get("done", False):
+                        break
+    except httpx.TimeoutException as exc:
+        logger.error("Ollama stream timeout: %s", exc)
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "error": {
+                    "code": "AI_TIMEOUT",
+                    "message": f"The AI stream timed out after {timeout:.0f}s.",
+                }
+            },
+        ) from exc
     except Exception as exc:
-        logger.error("OpenAI streaming error: %s", exc)
+        logger.error("Ollama stream error: %s", exc)
         raise HTTPException(
             status_code=502,
             detail={
                 "error": {
                     "code": "AI_API_ERROR",
-                    "message": f"AI provider streaming error: {exc}",
+                    "message": f"Ollama streaming failed: {exc}",
                 }
             },
         ) from exc
@@ -187,25 +351,68 @@ def chat_structured(
     max_tokens: int = 2000,
 ) -> dict[str, Any]:
     """
-    Request a JSON-structured response.
-    Returns parsed dict or raises on invalid JSON.
+    Request a JSON-structured response from Ollama.
+    Returns {'data': parsed_dict, 'prompt_tokens': int, 'completion_tokens': int}.
+
+    Attempts to use Ollama's native JSON format mode if available.
+    Falls back to prompt engineering + manual parsing.
     """
-    system_json_note = {
+    base, model = _require_ollama()
+    trimmed = _trim_messages(messages)
+    timeout = _timeout()
+
+    # Prepend a system message that demands JSON only
+    json_system = {
         "role": "system",
         "content": (
-            f"You MUST respond with valid JSON only. No markdown fences. "
-            f"Schema: {schema_description}"
+            "You MUST respond with valid JSON only. "
+            "Do not include any markdown code fences, explanations, or text outside the JSON. "
+            f"Required schema: {schema_description}"
         ),
     }
-    augmented = [system_json_note] + messages
-    result = chat_complete(augmented, temperature=temperature, max_tokens=max_tokens)
-    content = result["content"].strip()
-    # Strip possible markdown fence
+    augmented = [json_system] + trimmed
+
+    payload = {
+        "model": model,
+        "messages": augmented,
+        "stream": False,
+        "format": "json",  # Ollama JSON mode — forces JSON output when supported
+        "options": {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        },
+    }
+
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(f"{base}/api/chat", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.TimeoutException as exc:
+        raise HTTPException(
+            status_code=504,
+            detail={"error": {"code": "AI_TIMEOUT", "message": f"Structured AI call timed out after {timeout:.0f}s."}},
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": {"code": "AI_API_ERROR", "message": f"Ollama structured call failed: {exc}"}},
+        ) from exc
+
+    content = data.get("message", {}).get("content", "").strip()
+
+    # Strip possible markdown fences (some models ignore format=json)
     if content.startswith("```"):
-        content = content.split("```")[1]
-        if content.startswith("json"):
-            content = content[4:]
-        content = content.strip()
+        parts = content.split("```")
+        # Try the second part (inside fence)
+        for part in parts[1:]:
+            candidate = part.strip()
+            if candidate.startswith("json"):
+                candidate = candidate[4:].strip()
+            if candidate:
+                content = candidate
+                break
+
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError as exc:
@@ -214,13 +421,14 @@ def chat_structured(
             detail={
                 "error": {
                     "code": "AI_INVALID_JSON",
-                    "message": "AI returned non-JSON response.",
+                    "message": "The AI model returned a response that could not be parsed as JSON.",
                     "raw": content[:500],
                 }
             },
         ) from exc
+
     return {
         "data": parsed,
-        "prompt_tokens": result["prompt_tokens"],
-        "completion_tokens": result["completion_tokens"],
+        "prompt_tokens": data.get("prompt_eval_count", 0),
+        "completion_tokens": data.get("eval_count", 0),
     }

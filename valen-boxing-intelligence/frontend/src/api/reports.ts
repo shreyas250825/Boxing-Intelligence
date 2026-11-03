@@ -8,4 +8,4 @@ export const generateReport = (data: { boxer_id: string; session_ids: string[]; 
   apiClient.post<SingleResponse<{ report_id: string; filename: string }>>('/api/v1/reports', data).then(r => r.data.data)
 
 export const downloadReport = (reportId: string) =>
-  `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/v1/reports/${reportId}/download`
+  `${import.meta.env.VITE_API_BASE_URL || 'https://boxing-intelligence.onrender.com'}/api/v1/reports/${reportId}/download`

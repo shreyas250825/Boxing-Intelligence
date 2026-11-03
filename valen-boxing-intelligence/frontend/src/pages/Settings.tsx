@@ -33,7 +33,7 @@ export default function Settings() {
                 <CheckCircle2 size={16} className={"text-" + (health.status === "ok" ? "green" : "red") + "-500"} />
                 <div>
                   <p className="text-sm font-medium text-gray-800">Backend API</p>
-                  <p className="text-xs text-gray-400">http://localhost:8000 &bull; v{health.version}</p>
+                  <p className="text-xs text-gray-400">{import.meta.env.VITE_API_BASE_URL || 'https://boxing-intelligence.onrender.com'} &bull; v{health.version}</p>
                 </div>
                 <span className={"ml-auto text-xs font-medium px-2 py-0.5 rounded-full " + (health.status === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
                   {health.status === "ok" ? "Online" : "Error"}
