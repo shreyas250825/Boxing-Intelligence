@@ -2,7 +2,7 @@
 import Layout from "../../components/Layout"
 import apiClient from "../../api/client"
 import { SkeletonBlock } from "../../components/SkeletonLoader"
-import { CheckCircle2, XCircle, Info, ExternalLink, Activity, Wifi, WifiOff } from "lucide-react"
+import { CheckCircle2, XCircle, Info, ExternalLink, Activity, WifiOff } from "lucide-react"
 
 interface HealthData {
   status: string

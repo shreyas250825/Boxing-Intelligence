@@ -12,7 +12,7 @@
  * The sidebar contains only operational and analytics workspace navigation.
  */
 import { ReactNode, useState } from 'react'
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -49,11 +49,13 @@ import {
 } from 'lucide-react'
 import TopNav from './TopNav'
 
+import { type LucideIcon } from 'lucide-react'
+
 // ─── Sidebar section configuration ───────────────────────────────────────────
 
 interface NavItem {
   to: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
+  icon: LucideIcon
   label: string
 }
 
