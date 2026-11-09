@@ -3,6 +3,8 @@ from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
 from typing import Optional
+import aiofiles
+import time
 
 from app.core.database import get_db
 from app.core.config import settings
@@ -49,17 +51,29 @@ async def upload_video(
     coach_notes: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    content = await file.read()
+    """
+    Upload a video file.
 
-    if len(content) > video_service.settings.MAX_UPLOAD_BYTES:
+    Performance notes:
+    - Streams the file to disk in 256 KB chunks — never holds the full file in RAM.
+    - Validates size progressively during streaming.
+    - Returns immediately after the file is safely on disk.
+    - CV processing is kicked off asynchronously via the /analyse endpoint
+      and does NOT happen during this request.
+    """
+    t0 = time.perf_counter()
+
+    # Validate extension before reading any data
+    ext = video_service.get_extension(file.filename or "upload.mp4")
+    try:
+        video_service.validate_file_extension(file.filename or "upload.mp4")
+    except VideoValidationError as e:
         raise HTTPException(
-            status_code=413,
-            detail=error_response(
-                "VIDEO_FILE_TOO_LARGE",
-                f"Upload exceeds maximum size of {video_service.settings.MAX_UPLOAD_BYTES} bytes.",
-            )["error"],
+            status_code=422,
+            detail=error_response(e.code, e.message)["error"],
         )
 
+    # Create training session first (lightweight DB op)
     session_data = TrainingSessionCreate(
         boxer_id=boxer_id,
         fight_camp_id=fight_camp_id,
@@ -77,23 +91,75 @@ async def upload_video(
             detail=error_response("SESSION_CREATE_FAILED", str(e))["error"],
         )
 
+    # Stream file to disk in chunks — avoids loading 2 GB into memory
+    import uuid
+    video_id = str(uuid.uuid4())
+    storage_dir = video_service.get_storage_dir()
+    safe_path = video_service.build_safe_path(storage_dir, video_id, ext)
+
+    bytes_written = 0
+    CHUNK_SIZE = 256 * 1024  # 256 KB
+
     try:
-        video = video_service.save_upload(
-            db=db,
-            file_content=content,
-            original_filename=file.filename or "upload.mp4",
-            content_type=file.content_type or "video/mp4",
-            boxer_id=boxer_id,
-            session_id=session.id,
-        )
-    except VideoValidationError as e:
+        async with aiofiles.open(safe_path, "wb") as out:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                bytes_written += len(chunk)
+                if bytes_written > settings.MAX_UPLOAD_BYTES:
+                    await out.close()
+                    safe_path.unlink(missing_ok=True)
+                    db.delete(session)
+                    db.commit()
+                    raise HTTPException(
+                        status_code=413,
+                        detail=error_response(
+                            "VIDEO_FILE_TOO_LARGE",
+                            f"Upload exceeds maximum size of {settings.MAX_UPLOAD_BYTES} bytes.",
+                        )["error"],
+                    )
+                await out.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        safe_path.unlink(missing_ok=True)
         db.delete(session)
         db.commit()
-        status_code = 413 if e.code == "VIDEO_FILE_TOO_LARGE" else 422
         raise HTTPException(
-            status_code=status_code,
-            detail=error_response(e.code, e.message)["error"],
+            status_code=500,
+            detail=error_response("VIDEO_STORAGE_FAILURE", f"Failed to write video: {e}")["error"],
         )
+
+    # Validate MIME only after we know the extension (already done above via validate_file_extension)
+    from app.services.video_service import MIME_MAP
+    mime = MIME_MAP.get(ext, file.content_type or "video/mp4")
+
+    # Safe original filename (display only)
+    from app.models.video import Video as VideoModel
+    safe_original = Path(file.filename or "upload.mp4").name[:500]
+
+    video = VideoModel(
+        id=video_id,
+        boxer_id=boxer_id,
+        session_id=session.id,
+        storage_filename=safe_path.name,
+        original_filename_safe=safe_original,
+        mime_type=mime,
+        file_size_bytes=bytes_written,
+        status="uploaded",
+    )
+    db.add(video)
+    db.commit()
+    db.refresh(video)
+
+    elapsed = time.perf_counter() - t0
+
+    import logging
+    logging.getLogger(__name__).info(
+        "Video upload complete: %s, %d bytes, %.2fs",
+        video_id, bytes_written, elapsed,
+    )
 
     return success_response(
         VideoUploadResponse(

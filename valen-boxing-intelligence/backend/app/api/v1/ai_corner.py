@@ -71,6 +71,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai-corner"])
 
 # ---------------------------------------------------------------------------
+# AI Health check
+# ---------------------------------------------------------------------------
+
+@router.get("/health")
+def ai_health():
+    """
+    Check if Ollama is reachable and the configured model is installed.
+    Used by the frontend to show/hide AI status indicators.
+    """
+    from app.services.ai_service import check_ollama_health
+    return check_ollama_health()
+
+# ---------------------------------------------------------------------------
 # Auth helpers
 # ---------------------------------------------------------------------------
 

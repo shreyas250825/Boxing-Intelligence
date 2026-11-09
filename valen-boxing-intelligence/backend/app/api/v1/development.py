@@ -156,5 +156,12 @@ def get_development_dashboard(boxer_id: str, db: Session = Depends(get_db)):
                 .order_by(DevelopmentGoal.created_at.desc())
                 .all()
             ],
+            "skill_assessments": [
+                _serialize_model(a)
+                for a in db.query(SkillAssessment)
+                .filter(SkillAssessment.boxer_id == boxer_id)
+                .order_by(SkillAssessment.created_at.desc())
+                .all()
+            ],
         }
     )

@@ -228,6 +228,7 @@ export interface DevelopmentDashboard {
   journal_entries: TrainingJournalEntry[]
   recovery_checkins: RecoveryCheckin[]
   goals: DevelopmentGoal[]
+  skill_assessments: SkillAssessment[]
 }
 
 export interface NutritionProfile {

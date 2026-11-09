@@ -1,182 +1,229 @@
-﻿import { ReactNode, useState } from "react"
-import { NavLink, useNavigate, useLocation } from "react-router-dom"
+﻿/**
+ * Layout — the authenticated application shell.
+ *
+ * Structure:
+ *   <TopNav />          ← sticky, always visible
+ *   <div.app-body>
+ *     <aside.sidebar>   ← operational navigation only (no AI companion links)
+ *     <main.main-panel> ← page content
+ *   </div>
+ *
+ * The AI Corner is accessed exclusively from the TopNav dropdown.
+ * The sidebar contains only operational and analytics workspace navigation.
+ */
+import { ReactNode, useState } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
   PlusCircle,
   Settings,
-  Activity,
   ChevronRight,
-  LogOut,
+  ChevronDown,
+  ChevronUp,
   BarChart3,
   PlayCircle,
   Target,
   CalendarDays,
   Dumbbell,
-  Brain,
-  BookOpen,
-  Trophy,
-  Search,
-  Zap,
-  ChevronDown,
-  ChevronUp,
-  Salad,
+  Video,
+  Upload,
+  TrendingUp,
+  Flame,
+  Droplets,
+  Scale,
   Moon,
-  Camera,
-  Heart,
-  GraduationCap,
-  MessageSquare,
-} from "lucide-react"
+  Activity,
+  Trophy,
+  NotebookPen,
+  Sword,
+  BookOpen,
+  Shield,
+  FileText,
+  Layers,
+  Cpu,
+  Eye,
+  AlignLeft,
+  GitCompare,
+  Zap,
+} from 'lucide-react'
+import TopNav from './TopNav'
 
-const mainNavItems = [
-  { to: "/app", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/app/coach", icon: Target, label: "Coach Center" },
-  { to: "/app/coach/calendar", icon: CalendarDays, label: "Calendar" },
-  { to: "/app/coach/planner", icon: Dumbbell, label: "Planner" },
-  { to: "/app/coach/compare", icon: BarChart3, label: "Compare" },
-  { to: "/app/boxers", icon: Users, label: "Athletes" },
-  { to: "/app/analysis/demo", icon: PlayCircle, label: "Video Analysis" },
-  { to: "/app/boxers/new", icon: PlusCircle, label: "Register Athlete" },
-  { to: "/app/settings", icon: Settings, label: "Settings" },
+// ─── Sidebar section configuration ───────────────────────────────────────────
+
+interface NavItem {
+  to: string
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  label: string
+}
+
+interface NavSection {
+  key: string
+  title: string
+  items: NavItem[]
+  defaultOpen?: boolean
+}
+
+// NOTE: AI Corner is NOT in this sidebar. It lives in the TopNav dropdown.
+const NAV_SECTIONS: NavSection[] = [
+  {
+    key: 'workspace',
+    title: 'Workspace',
+    defaultOpen: true,
+    items: [
+      { to: '/app',              icon: LayoutDashboard,  label: 'Overview' },
+      { to: '/app/boxers',       icon: Users,            label: 'Athletes' },
+      { to: '/app/coach',        icon: Target,           label: 'Coach Center' },
+      { to: '/app/coach/calendar',icon: CalendarDays,    label: 'Calendar' },
+      { to: '/app/coach/planner', icon: Dumbbell,        label: 'Training Planner' },
+      { to: '/app/boxers',       icon: Sword,            label: 'Fight Camps' },
+    ],
+  },
+  {
+    key: 'video',
+    title: 'Video Intelligence',
+    defaultOpen: true,
+    items: [
+      { to: '/app/analysis/demo', icon: PlayCircle,   label: 'Video Studio' },
+      { to: '/app/boxers',        icon: Upload,        label: 'Upload Video' },
+      { to: '/app/boxers',        icon: Video,         label: 'Video Library' },
+      { to: '/app/boxers',        icon: Activity,      label: 'Movement Analysis' },
+      { to: '/app/boxers',        icon: Cpu,           label: 'Pose & Tracking' },
+      { to: '/app/boxers',        icon: AlignLeft,     label: 'Punch Timeline' },
+      { to: '/app/boxers',        icon: Eye,           label: 'Technique Review' },
+      { to: '/app/boxers',        icon: BookOpen,      label: 'Coach Observations' },
+      { to: '/app/coach/compare', icon: GitCompare,    label: 'Video Comparison' },
+    ],
+  },
+  {
+    key: 'analytics',
+    title: 'Performance Analytics',
+    defaultOpen: false,
+    items: [
+      { to: '/app/coach',         icon: BarChart3,      label: 'Performance Dashboard' },
+      { to: '/app/boxers',        icon: Zap,            label: 'Punch Analytics' },
+      { to: '/app/boxers',        icon: TrendingUp,     label: 'Movement Trends' },
+      { to: '/app/boxers',        icon: Layers,         label: 'Physical Assessments' },
+      { to: '/app/boxers',        icon: Activity,       label: 'Training Load' },
+      { to: '/app/boxers',        icon: Shield,         label: 'Conditioning' },
+      { to: '/app/coach/compare', icon: GitCompare,     label: 'Progress Comparison' },
+      { to: '/app/boxers',        icon: FileText,       label: 'Reports' },
+    ],
+  },
+  {
+    key: 'wellness',
+    title: 'Athlete Wellness',
+    defaultOpen: false,
+    items: [
+      { to: '/app/boxers',        icon: Flame,          label: 'Nutrition' },
+      { to: '/app/boxers',        icon: BookOpen,       label: 'Food Diary' },
+      { to: '/app/boxers',        icon: AlignLeft,      label: 'Meal Planner' },
+      { to: '/app/boxers',        icon: Droplets,       label: 'Hydration' },
+      { to: '/app/boxers',        icon: Scale,          label: 'Weight Tracking' },
+      { to: '/app/boxers',        icon: Activity,       label: 'Recovery' },
+      { to: '/app/boxers',        icon: Moon,           label: 'Sleep & Readiness' },
+    ],
+  },
+  {
+    key: 'management',
+    title: 'Management',
+    defaultOpen: false,
+    items: [
+      { to: '/app/boxers',        icon: Trophy,         label: 'Goals' },
+      { to: '/app/boxers',        icon: NotebookPen,    label: 'Training Journal' },
+      { to: '/app/boxers',        icon: Sword,          label: 'Competitions' },
+      { to: '/app/boxers/new',    icon: PlusCircle,     label: 'Register Athlete' },
+      { to: '/app/settings',      icon: Settings,       label: 'Settings' },
+    ],
+  },
 ]
 
-const aiCompanionItems = [
-  { to: "/app/ai-corner/coach-valen", icon: Dumbbell, label: "Coach Valen" },
-  { to: "/app/ai-corner/nutricoach", icon: Salad, label: "NutriCoach" },
-  { to: "/app/ai-corner/recoverai", icon: Moon, label: "RecoverAI" },
-  { to: "/app/ai-corner/corneriq", icon: Target, label: "CornerIQ" },
-  { to: "/app/ai-corner/visionbox", icon: Camera, label: "VisionBox AI" },
-  { to: "/app/ai-corner/mindcorner", icon: Heart, label: "MindCorner" },
-  { to: "/app/ai-corner/performancelab", icon: Zap, label: "PerformanceLab AI" },
-  { to: "/app/ai-corner/boxing-academy", icon: GraduationCap, label: "Boxing Academy AI" },
-]
+// ─── Sidebar section component ────────────────────────────────────────────────
 
-const aiToolItems = [
-  { to: "/app/ai-corner/ask-my-data", icon: Search, label: "Ask My Data" },
-  { to: "/app/ai-corner/weekly-review", icon: BarChart3, label: "AI Weekly Review" },
-  { to: "/app/ai-corner/memory", icon: Brain, label: "AI Memory" },
-  { to: "/app/ai-corner/goals", icon: Trophy, label: "AI Goals" },
-  { to: "/app/ai-corner/challenges", icon: Zap, label: "AI Challenges" },
-  { to: "/app/ai-corner/learning", icon: BookOpen, label: "Learning Centre" },
-  { to: "/app/ai-corner/simulator", icon: Zap, label: "Boxing Simulator" },
-  { to: "/app/ai-corner/history", icon: MessageSquare, label: "Conversation History" },
-]
-
-export default function Layout({ children }: { children: ReactNode }) {
-  const navigate = useNavigate()
+function SidebarSection({ section }: { section: NavSection }) {
   const location = useLocation()
-  const [aiExpanded, setAiExpanded] = useState(location.pathname.startsWith("/app/ai-corner"))
-
-  const handleLogout = () => {
-    localStorage.removeItem("valen-auth")
-    navigate("/login", { replace: true })
-  }
+  const [open, setOpen] = useState(
+    section.defaultOpen ?? section.items.some((i) => location.pathname === i.to)
+  )
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar-shell">
-        <div className="brand-block">
-          <div className="brand-mark small">
-            <Activity size={14} />
-          </div>
-          <div className="brand-copy-wrap">
-            <p className="brand-title">Valen Boxing</p>
-            <p className="brand-subtitle">Performance Intelligence</p>
-          </div>
-        </div>
+    <div className="sidebar-section">
+      <button
+        className={`sidebar-section-toggle${open ? ' open' : ''}`}
+        onClick={() => setOpen(!open)}
+      >
+        {section.title}
+        {open ? <ChevronUp size={11} className="chevron" /> : <ChevronDown size={11} className="chevron" />}
+      </button>
+      <div className={`sidebar-section-items${open ? ' open' : ''}`}>
+        {section.items.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={`${to}-${label}`}
+            to={to}
+            end={to === '/app'}
+            className="nav-link"
+          >
+            {({ isActive }) => (
+              <>
+                <Icon size={14} className={isActive ? 'nav-icon active' : 'nav-icon'} />
+                <span className="text-[13px]">{label}</span>
+                {isActive && <ChevronRight size={10} className="nav-chevron" />}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-        <nav className="sidebar-nav">
-          {/* Main nav items */}
-          {mainNavItems.map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} end={to === "/app"} className="nav-link">
-              {({ isActive }) => (
-                <>
-                  <Icon size={16} className={isActive ? "nav-icon active" : "nav-icon"} />
-                  <span>{label}</span>
-                  {isActive && <ChevronRight size={12} className="nav-chevron" />}
-                </>
-              )}
-            </NavLink>
-          ))}
+// ─── Main Layout ───────────────────────────────────────────────────────────────
 
-          {/* AI Corner section */}
-          <div className="mt-3 mb-1">
-            <button
-              onClick={() => setAiExpanded(!aiExpanded)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition"
-            >
-              <Brain size={14} className="text-orange-400" />
-              <span className="flex-1 text-left uppercase tracking-wider">AI Corner</span>
-              {aiExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
+export default function Layout({ children }: { children: ReactNode }) {
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-          {aiExpanded && (
-            <>
-              <NavLink to="/app/ai-corner" end className="nav-link">
-                {({ isActive }) => (
-                  <>
-                    <Brain size={16} className={isActive ? "nav-icon active" : "nav-icon"} />
-                    <span>AI Corner Home</span>
-                    {isActive && <ChevronRight size={12} className="nav-chevron" />}
-                  </>
-                )}
-              </NavLink>
+  return (
+    <div className="app-shell-with-nav">
+      <TopNav
+        onMobileMenuToggle={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+        mobileMenuOpen={mobileSidebarOpen}
+      />
 
-              <div className="px-3 py-1">
-                <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest">Companions</p>
-              </div>
+      <div className="app-body">
+        {/* Mobile overlay */}
+        {mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/50 md:hidden"
+            style={{ top: 56 }}
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
 
-              {aiCompanionItems.map(({ to, icon: Icon, label }) => (
-                <NavLink key={to} to={to} className="nav-link pl-5">
-                  {({ isActive }) => (
-                    <>
-                      <Icon size={14} className={isActive ? "nav-icon active" : "nav-icon"} />
-                      <span className="text-[13px]">{label}</span>
-                      {isActive && <ChevronRight size={11} className="nav-chevron" />}
-                    </>
-                  )}
-                </NavLink>
-              ))}
-
-              <div className="px-3 py-1 mt-1">
-                <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest">Tools</p>
-              </div>
-
-              {aiToolItems.map(({ to, icon: Icon, label }) => (
-                <NavLink key={to} to={to} className="nav-link pl-5">
-                  {({ isActive }) => (
-                    <>
-                      <Icon size={14} className={isActive ? "nav-icon active" : "nav-icon"} />
-                      <span className="text-[13px]">{label}</span>
-                      {isActive && <ChevronRight size={11} className="nav-chevron" />}
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </>
-          )}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-metrics">
-            <div className="metric-badge">
-              <BarChart3 size={12} />
+        {/* Sidebar */}
+        <aside className={`sidebar-shell${mobileSidebarOpen ? ' mobile-open' : ''}`}>
+          <div className="brand-block">
+            <div className="brand-mark small">
+              <Activity size={13} />
             </div>
-            <div>
-              <p className="metric-title">Valen Labs</p>
-              <p className="metric-subtitle">Operational analytics</p>
+            <div className="brand-copy-wrap">
+              <p className="brand-title">Valen Boxing</p>
+              <p className="brand-subtitle">Performance Intelligence</p>
             </div>
           </div>
 
-          <button className="logout-button" onClick={handleLogout}>
-            <LogOut size={14} />
-            Logout
-          </button>
-        </div>
-      </aside>
+          <nav className="sidebar-nav flex-1">
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.key}>
+                <SidebarSection section={section} />
+                <div className="sidebar-section-divider" />
+              </div>
+            ))}
+          </nav>
+        </aside>
 
-      <main className="main-panel">{children}</main>
+        {/* Main content */}
+        <main className="main-panel">{children}</main>
+      </div>
     </div>
   )
 }

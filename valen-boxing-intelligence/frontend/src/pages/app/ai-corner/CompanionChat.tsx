@@ -690,12 +690,24 @@ export default function CompanionChat() {
                 <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-red-300">{error}</p>
-                  {error.includes('AI_NOT_CONFIGURED') || error.includes('API key') ? (
+                  {(error.includes('AI_NOT_CONFIGURED') || error.includes('AI_MODEL_NOT_FOUND') || error.includes('Ollama')) && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-slate-400 font-semibold">To fix this:</p>
+                      <ol className="text-xs text-slate-400 space-y-0.5 list-decimal pl-4">
+                        <li>Install Ollama: <span className="text-orange-300">https://ollama.com/download</span></li>
+                        <li>Pull a model: <code className="text-orange-300">ollama pull llama3:latest</code></li>
+                        <li>Start Ollama: <code className="text-orange-300">ollama serve</code></li>
+                        <li>Restart the backend server</li>
+                      </ol>
+                    </div>
+                  )}
+                  {error.includes('AI_TIMEOUT') && (
                     <p className="text-xs text-slate-400 mt-1">
-                      Add your <code className="text-orange-300">OPENAI_API_KEY</code> to{' '}
-                      <code className="text-orange-300">backend/.env</code> and restart the server.
+                      The model took too long to respond. Try a shorter message, or increase{' '}
+                      <code className="text-orange-300">OLLAMA_TIMEOUT_SECONDS</code> in{' '}
+                      <code className="text-orange-300">backend/.env</code>.
                     </p>
-                  ) : null}
+                  )}
                 </div>
               </div>
             )}

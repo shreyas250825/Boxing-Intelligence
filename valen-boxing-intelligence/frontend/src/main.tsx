@@ -118,10 +118,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/app/ai-corner/weekly-review" element={<RequireAuth><WeeklyReview /></RequireAuth>} />
           <Route path="/app/ai-corner/challenges" element={<RequireAuth><AIChallenges /></RequireAuth>} />
           <Route path="/app/ai-corner/history" element={<RequireAuth><ConversationHistory /></RequireAuth>} />
-          {/* Companion chat — :slug must come LAST among /app/ai-corner/* routes */}
+          {/* Companion chat — :slug MUST be last in ai-corner group */}
           <Route path="/app/ai-corner/:slug" element={<RequireAuth><CompanionChat /></RequireAuth>} />
-          <Route path="/app/ai-corner/challenges" element={<RequireAuth><AIChallenges /></RequireAuth>} />
-          <Route path="/app/ai-corner/history" element={<RequireAuth><ConversationHistory /></RequireAuth>} />
           <Route path="/boxers" element={<Navigate to="/app/boxers" replace />} />
           <Route path="/boxers/new" element={<Navigate to="/app/boxers/new" replace />} />
           <Route path="/settings" element={<Navigate to="/app/settings" replace />} />

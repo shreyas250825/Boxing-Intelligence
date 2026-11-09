@@ -17,29 +17,41 @@ export default function VideoUpload() {
   useEffect(() => {
     if (!id) return
     Promise.all([getBoxer(id), listFightCamps(id)])
-      .then(([b, c]) => { setBoxer(b); setCamps(c) }).catch(() => {})
+      .then(([b, c]) => { setBoxer(b); setCamps(c) })
+      .catch(() => {})
   }, [id])
 
-  // After upload: navigate directly to the analysis workspace with the video_id
   const handleSuccess = (videoId: string) => {
     nav(`/app/analysis/${videoId}`)
   }
 
   return (
     <Layout>
-      <div className="px-8 py-8 max-w-2xl">
-        <Link to={`/app/boxers/${id}`} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
-          <ArrowLeft size={14} />{boxer?.full_name ?? "Profile"}
+      <div className="px-6 py-6 max-w-2xl mx-auto">
+        <Link
+          to={`/app/boxers/${id}`}
+          className="inline-flex items-center gap-1.5 text-sm mb-5 transition"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <ArrowLeft size={14} />
+          {boxer?.full_name ?? "Profile"}
         </Link>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-            <Video size={16} className="text-blue-600" />
+
+        <div className="page-header">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}
+            >
+              <Video size={16} />
+            </div>
+            <div>
+              <h1>Upload Video</h1>
+              <p>Footage is streamed to disk and processed asynchronously.</p>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Upload Video</h1>
         </div>
-        <p className="text-sm text-gray-500 mb-6 ml-12">
-          Upload boxing footage. The analysis workspace will open automatically.
-        </p>
+
         <div className="card p-6">
           {boxer ? (
             <VideoUploadForm
@@ -49,7 +61,11 @@ export default function VideoUpload() {
               onSuccess={handleSuccess}
             />
           ) : (
-            <p className="text-gray-400 text-sm text-center py-8">Loading…</p>
+            <div className="empty-state">
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                Loading athlete profile…
+              </p>
+            </div>
           )}
         </div>
       </div>

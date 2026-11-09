@@ -22,11 +22,12 @@ import {
 } from "../../api/development"
 import Layout from "../../components/Layout"
 import { SkeletonBlock } from "../../components/SkeletonLoader"
-import type {
+import {
   Boxer,
   DevelopmentDashboard,
   DevelopmentGoal,
   RecoveryCheckin,
+  SkillAssessment,
   TrainingJournalEntry,
 } from "../../types"
 
@@ -492,10 +493,18 @@ export default function DevelopmentWorkspace() {
               <div className="card p-5">
                 <h3 className="text-base font-semibold text-white mb-4">Skill tracking</h3>
                 <div className="space-y-3">
-                  {dashboard ? (
-                    <>
-                      <p className="text-sm text-slate-400">No skill assessments saved yet.</p>
-                    </>
+                  {dashboard?.skill_assessments?.length ? (
+                    dashboard.skill_assessments.map((s: SkillAssessment) => (
+                      <div key={s.id} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-white">{s.skill_name}</p>
+                          <span className="text-[10px] uppercase tracking-[0.14em] text-slate-400 capitalize">{s.current_level ?? "—"}</span>
+                        </div>
+                        {s.development_goal && <p className="text-sm text-slate-300">Goal: {s.development_goal}</p>}
+                        {s.coach_notes && <p className="mt-1 text-xs text-slate-400">Coach: {s.coach_notes}</p>}
+                        {s.assigned_drill && <p className="mt-1 text-xs text-slate-400">Drill: {s.assigned_drill}</p>}
+                      </div>
+                    ))
                   ) : (
                     <p className="text-sm text-slate-400">No skill assessments saved yet.</p>
                   )}

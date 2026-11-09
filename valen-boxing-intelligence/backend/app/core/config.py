@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     # Increase if using a large model on slow hardware.
     OLLAMA_TIMEOUT_SECONDS: float = 120.0
 
+    # -----------------------------------------------------------------------
+    # Email delivery — required for real password recovery
+    # -----------------------------------------------------------------------
+    # Set to True and implement the email sending in auth.py to enable
+    # production password recovery. When False, the reset token is returned
+    # directly in the API response (for local/development testing only).
+    EMAIL_DELIVERY_CONFIGURED: bool = False
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

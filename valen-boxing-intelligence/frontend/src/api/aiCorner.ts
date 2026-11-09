@@ -547,6 +547,21 @@ export async function fetchCornerHome(boxerId: string): Promise<CornerHome> {
   return res.data
 }
 
+// ─── AI Health ────────────────────────────────────────────────────────────
+
+export interface AIHealth {
+  available: boolean
+  model: string
+  model_installed: boolean
+  installed_models?: string[]
+  error: string | null
+}
+
+export async function fetchAIHealth(): Promise<AIHealth> {
+  const res = await apiClient.get(`${API}/health`)
+  return res.data
+}
+
 // ─── Voice ────────────────────────────────────────────────────────────────
 
 export async function saveVoiceTranscript(data: {
