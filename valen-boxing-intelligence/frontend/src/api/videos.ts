@@ -13,7 +13,7 @@ export const uploadVideo = (
 ): Promise<{ video_id: string; session_id: string; status: string; original_filename_safe: string; file_size_bytes: number; uploaded_at: string }> => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    const base = import.meta.env.VITE_API_BASE_URL || 'https://boxing-intelligence.onrender.com'
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
     xhr.open('POST', `${base}/api/v1/videos/upload`)
 
     xhr.upload.onprogress = (e) => {
